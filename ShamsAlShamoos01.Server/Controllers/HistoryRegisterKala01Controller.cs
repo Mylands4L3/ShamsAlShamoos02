@@ -219,24 +219,28 @@ namespace ShamsAlShamoos01.Server.Controllers
             return null;
         }
 
-        private static string BuildAllClause(List<string> roles, string baseCondition, string status01P)
-        {
-            if (roles.Contains("HistoryRegisterKalaALL") && status01P == "AllPassSignature01")
-            {
-                return $"{baseCondition} AND StatusConfirmation03 = 320";
-            }
+   private static string BuildAllClause(List<string> roles, string baseCondition, string status01P)
+{
+    if (roles.Contains("HistoryRegisterKalaALL") && status01P == "AllPassSignature01")
+    {
+        return $"{baseCondition} AND StatusConfirmation03 = 320";
+    }
 
-            return null;
-        }
+    return null;
+}
 
 
         private static string BuildPayvarOrVazifehClause(List<string> roles, string baseCondition)
         {
             if (roles.Contains("HistoryRegisterKalaPayvar"))
+            {
                 return $"{baseCondition} AND StatusConfirmation03 = 320 AND TblLuLookupSubbId NOT IN ('8','10','12','13')";
+            }
 
             if (roles.Contains("HistoryRegisterKalaVazifeh"))
+            {
                 return $"{baseCondition} AND StatusConfirmation03 = 320 AND TblLuLookupSubbId IN ('8','10','12','13')";
+            }
 
             return null;
         }
