@@ -160,28 +160,30 @@ namespace ShamsAlShamoos01.Server.Controllers
         private static string BuildYeganClause(List<string> roles, string unitCondition, string regUnitCondition, bool isPass, bool isWait, bool notClear)
         {
             if (!roles.Contains("HistoryRegisterKalaYEGAN"))
-            {
                 return null;
-            }
+
             string clause = null;
 
             if (roles.Contains("StatusHistoryRegisterKalaConfirmation02"))
             {
-                clause = isPass ? $"{regUnitCondition} AND StatusConfirmation02 = 320" :
-                         isWait ? $"{regUnitCondition} AND StatusConfirmation02 = 319" : null;
+                clause = isPass ? $"{regUnitCondition} AND StatusConfirmation02 = 320"
+                                : isWait ? $"{regUnitCondition} AND StatusConfirmation02 = 319"
+                                         : null;
             }
             else if (roles.Contains("StatusHistoryRegisterKalaConfirmation03"))
             {
-                if (isPass) clause = $"{regUnitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
-                else if (notClear) clause = $"{regUnitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 321";
-                else if (isWait) clause = $"{regUnitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 319";
+                // StatusConfirmation02 همیشه 320 است
+                string baseClause = $"{regUnitCondition} AND StatusConfirmation02 = 320";
+
+                clause = isPass ? $"{baseClause} AND StatusConfirmation03 = 320"
+                         : notClear ? $"{baseClause} AND StatusConfirmation03 = 321"
+                         : isWait ? $"{baseClause} AND StatusConfirmation03 = 319"
+                         : null;
             }
 
-            if (clause == null && !roles.Contains("StatusHistoryRegisterKalaConfirmation02") &&
-                               !roles.Contains("StatusHistoryRegisterKalaConfirmation03"))
-            {
+            // شرط پیش‌فرض اگر هیچ یک از نقش‌های بالا نبود
+            if (clause == null)
                 clause = $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
-            }
 
             return clause;
         }
