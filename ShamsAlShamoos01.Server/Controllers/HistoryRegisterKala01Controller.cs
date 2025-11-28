@@ -160,7 +160,9 @@ namespace ShamsAlShamoos01.Server.Controllers
         private static string BuildYeganClause(List<string> roles, string unitCondition, string regUnitCondition, bool isPass, bool isWait, bool notClear)
         {
             if (!roles.Contains("HistoryRegisterKalaYEGAN"))
+            {
                 return null;
+            }
 
             string clause = null;
 
@@ -182,8 +184,10 @@ namespace ShamsAlShamoos01.Server.Controllers
             }
 
             // شرط پیش‌فرض اگر هیچ یک از نقش‌های بالا نبود
-            if (clause == null)
+            if (string.IsNullOrEmpty(clause))
+            {
                 clause = $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
+            }
 
             return clause;
         }

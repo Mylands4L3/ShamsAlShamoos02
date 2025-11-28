@@ -1,51 +1,201 @@
-﻿// نسخه بدون فیلتر و ترتیب
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ShamsAlShamoos01.Infrastructure.Persistence.Contexts;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
-public class GenericClass<T> where T : class
+using System.Threading.Tasks;
+
+namespace ShamsAlShamoos01.Infrastructure.Persistence.Repositories
 {
-    private readonly ApplicationDbContext _context;
-    private readonly DbSet<T> _table;
-
-    public GenericClass(ApplicationDbContext context)
+    public class GenericClass<T> : IGenericRepository<T> where T : class
     {
-        _context = context;
-        _table = _context.Set<T>();
-    }
+        private readonly ApplicationDbContext _context;
+        private readonly DbSet<T> _table;
 
-    // نسخه بدون فیلتر و ترتیب
-    public IEnumerable<T> GetAll()
-    {
-        return _table.ToList();
-    }
+        public GenericClass(ApplicationDbContext context)
+        {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _table = _context.Set<T>();
+        }
 
-    // نسخه با فیلتر
-    public IEnumerable<T> GetAll(Expression<Func<T, bool>> filter)
-    {
-        return _table.Where(filter).ToList();
-    }
+        #region Create, Update, Delete
 
-    // نسخه با ترتیب
-    public IEnumerable<T> GetAll(Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
-    {
-        var query = _table.AsQueryable();
-        query = orderBy(query);
-        return query.ToList();
-    }
+        public void Create(T entity)
+        {
+            if (entity == null)
+            {
+                throw new ArgumentNullException(nameof(entity));
+            }
 
-    // نسخه با فیلتر و ترتیب
-    public IEnumerable<T> GetAll(
-        Expression<Func<T, bool>> filter,
-        Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
-    {
-        IQueryable<T> query = _table;
+            _table.Add(entity);
+        }
 
-        if (filter != null)
-            query = query.Where(filter);
+        public void Update(T entity)
+        {
+            if (entity == null)
+            {
+                throw new ArgumentNullException(nameof(entity));
+            }
 
-        if (orderBy != null)
-            query = orderBy(query);
+            _table.Attach(entity);
+            _context.Entry(entity).State = EntityState.Modified;
+        }
 
-        return query.ToList();
+        public void Delete(T entity)
+        {
+            if (entity == null)
+            {
+                throw new ArgumentNullException(nameof(entity));
+            }
+
+            if (_context.Entry(entity).State == EntityState.Detached)
+            {
+                _table.Attach(entity);
+            }
+
+            _table.Remove(entity);
+        }
+
+        public void DeleteById(object id)
+        {
+            T entity = GetById(id);
+            if (entity != null)
+            {
+                Delete(entity);
+            }
+        }
+
+        #endregion
+
+        #region Get Methods (Sync)
+
+        public T GetById(object id)
+        {
+            return _table.Find(id);
+        }
+
+        // بدون فیلتر و ترتیب
+        public IEnumerable<T> GetAll()
+        {
+            return _table.ToList();
+        }
+
+        // فقط فیلتر
+        public IEnumerable<T> GetAll(Expression<Func<T, bool>> filter)
+        {
+            if (filter == null)
+            {
+                return GetAll();
+            }
+
+            return _table.Where(filter).ToList();
+        }
+
+        // فقط ترتیب
+        public IEnumerable<T> GetAll(Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
+        {
+            IQueryable<T> query = _table.AsQueryable();
+            if (orderBy != null)
+            {
+                query = orderBy(query);
+            }
+
+            return query.ToList();
+        }
+
+        // فیلتر و ترتیب
+        public IEnumerable<T> GetAll(
+            Expression<Func<T, bool>> filter,
+            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
+        {
+            IQueryable<T> query = _table;
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+            if (orderBy != null)
+            {
+                query = orderBy(query);
+            }
+
+            return query.ToList();
+        }
+
+        // ===========================
+        // متد Get مشابه LINQ با overload
+        // ===========================
+        public IEnumerable<T> Get(Expression<Func<T, bool>> filter)
+        {
+            return GetAll(filter);
+        }
+
+        public IEnumerable<T> Get(Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
+        {
+            return GetAll(orderBy);
+        }
+
+        public IEnumerable<T> Get(Expression<Func<T, bool>> filter, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
+        {
+            return GetAll(filter, orderBy);
+        }
+
+        #endregion
+
+        #region Async Methods (EF Core)
+
+        public async Task<T> GetByIdAsync(object id)
+        {
+            return await _table.FindAsync(id);
+        }
+
+        public async Task<IEnumerable<T>> GetAllAsync()
+        {
+            return await _table.ToListAsync();
+        }
+
+        public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> filter)
+        {
+            if (filter == null)
+            {
+                return await GetAllAsync();
+            }
+
+            return await _table.Where(filter).ToListAsync();
+        }
+
+        public async Task<IEnumerable<T>> GetAllAsync(Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
+        {
+            IQueryable<T> query = _table.AsQueryable();
+
+            if (orderBy != null)
+            {
+                query = orderBy(query);
+            }
+
+            return await query.ToListAsync();
+        }
+
+        public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> filter,
+                                                      Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
+        {
+            IQueryable<T> query = _table;
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+            if (orderBy != null)
+            {
+                query = orderBy(query);
+            }
+
+            return await query.ToListAsync();
+        }
+
+        #endregion
     }
 }

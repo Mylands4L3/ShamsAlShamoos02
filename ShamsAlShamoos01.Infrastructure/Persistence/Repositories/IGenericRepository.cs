@@ -15,11 +15,17 @@ namespace ShamsAlShamoos01.Infrastructure.Persistence.Repositories
         T GetById(object id);
         IEnumerable<T> GetAll(Expression<Func<T, bool>> filter = null);
 
-        /// <summary>
-        /// متد مشابه LINQ برای فیلتر و ترتیب
-        /// </summary>
-        IEnumerable<T> Get(
-            Expression<Func<T, bool>> filter = null,
-            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null);
+        // ============================
+        // متدهای Get با overloading
+        // ============================
+
+        // فقط فیلتر
+        IEnumerable<T> Get(Expression<Func<T, bool>> filter);
+
+        // فقط ترتیب
+        IEnumerable<T> Get(Func<IQueryable<T>, IOrderedQueryable<T>> orderBy);
+
+        // فیلتر و ترتیب
+        IEnumerable<T> Get(Expression<Func<T, bool>> filter, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy);
     }
 }
