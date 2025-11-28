@@ -17,7 +17,9 @@ namespace ShamsAlShamoos01.Server.Controllers
         public IActionResult Generate([FromQuery] string text)
         {
             if (string.IsNullOrWhiteSpace(text))
+            {
                 return BadRequest("Text cannot be empty");
+            }
 
             string fileName = $"qr_{DateTime.Now.Ticks}";
             _qr.GenerateQrToFile(text, fileName);

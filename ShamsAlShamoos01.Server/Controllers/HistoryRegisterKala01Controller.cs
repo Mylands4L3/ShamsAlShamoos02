@@ -116,115 +116,89 @@ namespace ShamsAlShamoos01.Server.Controllers
             bool isWait = status01P == "WaitForSignature01";
             bool notClear = status01P == "NotCleare01";
 
-            /* ---------------------------------------------------------
-             *  سطح اول – نقش YEGAN
-             * --------------------------------------------------------- */
-            if (userRoles.Contains("HistoryRegisterKalaYEGAN"))
-            {
-                // نقش امضای دوم
-                if (userRoles.Contains("StatusHistoryRegisterKalaConfirmation02"))
-                {
-                    if (isPass)
-                    {
-                        return $"{regUnitCondition} AND StatusConfirmation02 = 320";
-                    }
+            // سطح YEGAN
+            var yeganClause = BuildYeganClause(userRoles, unitCondition, regUnitCondition, isPass, isWait, notClear);
+            if (yeganClause != null) return yeganClause;
 
-                    if (isWait)
-                    {
-                        return $"{regUnitCondition} AND StatusConfirmation02 = 319";
-                    }
-                }
+            // سطح YEGAN00
+            var yegan00Clause = BuildYegan00Clause(userRoles, baseCondition, unitCondition, isPass, isWait);
+            if (yegan00Clause != null) return yegan00Clause;
 
-                // نقش امضای سوم
-                if (userRoles.Contains("StatusHistoryRegisterKalaConfirmation03"))
-                {
-                    if (isPass)
-                    {
-                        return $"{regUnitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
-                    }
+            // تاریخچه ALL
+            var allClause = BuildAllClause(userRoles, baseCondition, status01P);
+            if (allClause != null) return allClause;
 
-                    if (notClear)
-                    {
-                        return $"{regUnitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 321";
-                    }
+            // پایور و وظیفه
+            var payvarOrVazifehClause = BuildPayvarOrVazifehClause(userRoles, baseCondition);
+            if (payvarOrVazifehClause != null) return payvarOrVazifehClause;
 
-                    if (isWait)
-                    {
-                        return $"{regUnitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 319";
-                    }
-                }
-
-                // اگر هیچ‌کدام از نقش‌های امضا ۲ و ۳ نبود
-                if (!userRoles.Contains("StatusHistoryRegisterKalaConfirmation02") &&
-                    !userRoles.Contains("StatusHistoryRegisterKalaConfirmation03"))
-                {
-                    return $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
-                }
-            }
-
-            /* ---------------------------------------------------------
-             *  سطح دوم – نقش YEGAN00
-             * --------------------------------------------------------- */
-            if (userRoles.Contains("HistoryRegisterKalaYEGAN00"))
-            {
-                // امضا ۲
-                if (userRoles.Contains("StatusHistoryRegisterKalaConfirmation02"))
-                {
-                    if (isPass)
-                    {
-                        return $"{baseCondition} AND StatusConfirmation02 = 320";
-                    }
-
-                    if (isWait)
-                    {
-                        return $"{baseCondition} AND StatusConfirmation02 = 319";
-                    }
-                }
-
-                // امضا ۳
-                if (userRoles.Contains("StatusHistoryRegisterKalaConfirmation03"))
-                {
-                    if (isPass)
-                    {
-                        return $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
-                    }
-
-                    if (isWait)
-                    {
-                        return $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 319";
-                    }
-                }
-            }
-
-            /* ---------------------------------------------------------
-             *  تاریخچه ALL
-             * --------------------------------------------------------- */
-            if (userRoles.Contains("HistoryRegisterKalaALL") &&
-                status01P == "AllPassSignature01")
-            {
-                return $"{baseCondition} AND StatusConfirmation03 = 320";
-            }
-
-            /* ---------------------------------------------------------
-             *  پایور
-             * --------------------------------------------------------- */
-            if (userRoles.Contains("HistoryRegisterKalaPayvar"))
-            {
-                return $"{baseCondition} AND StatusConfirmation03 = 320 AND TblLuLookupSubbId NOT IN ('8','10','12','13')";
-            }
-
-            /* ---------------------------------------------------------
-             *  وظیفه
-             * --------------------------------------------------------- */
-            if (userRoles.Contains("HistoryRegisterKalaVazifeh"))
-            {
-                return $"{baseCondition} AND StatusConfirmation03 = 320 AND TblLuLookupSubbId IN ('8','10','12','13')";
-            }
-
-            /* ---------------------------------------------------------
-             *  پیش‌فرض – عدم دسترسی
-             * --------------------------------------------------------- */
+            // پیش‌فرض
             return "1 = 0";
+        }
+
+        // متدهای کمکی:
+
+        private static string BuildYeganClause(List<string> roles, string unitCondition, string regUnitCondition, bool isPass, bool isWait, bool notClear)
+        {
+            if (!roles.Contains("HistoryRegisterKalaYEGAN")) return null;
+
+            if (roles.Contains("StatusHistoryRegisterKalaConfirmation02"))
+            {
+                if (isPass) return $"{regUnitCondition} AND StatusConfirmation02 = 320";
+                if (isWait) return $"{regUnitCondition} AND StatusConfirmation02 = 319";
+            }
+
+            if (roles.Contains("StatusHistoryRegisterKalaConfirmation03"))
+            {
+                if (isPass) return $"{regUnitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
+                if (notClear) return $"{regUnitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 321";
+                if (isWait) return $"{regUnitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 319";
+            }
+
+            if (!roles.Contains("StatusHistoryRegisterKalaConfirmation02") &&
+                !roles.Contains("StatusHistoryRegisterKalaConfirmation03"))
+            {
+                return $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
+            }
+
+            return null;
+        }
+
+        private static string BuildYegan00Clause(List<string> roles, string baseCondition, string unitCondition, bool isPass, bool isWait)
+        {
+            if (!roles.Contains("HistoryRegisterKalaYEGAN00")) return null;
+
+            if (roles.Contains("StatusHistoryRegisterKalaConfirmation02"))
+            {
+                if (isPass) return $"{baseCondition} AND StatusConfirmation02 = 320";
+                if (isWait) return $"{baseCondition} AND StatusConfirmation02 = 319";
+            }
+
+            if (roles.Contains("StatusHistoryRegisterKalaConfirmation03"))
+            {
+                if (isPass) return $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
+                if (isWait) return $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 319";
+            }
+
+            return null;
+        }
+
+        private static string BuildAllClause(List<string> roles, string baseCondition, string status01P)
+        {
+            if (roles.Contains("HistoryRegisterKalaALL") && status01P == "AllPassSignature01")
+                return $"{baseCondition} AND StatusConfirmation03 = 320";
+            return null;
+        }
+
+        private static string BuildPayvarOrVazifehClause(List<string> roles, string baseCondition)
+        {
+            if (roles.Contains("HistoryRegisterKalaPayvar"))
+                return $"{baseCondition} AND StatusConfirmation03 = 320 AND TblLuLookupSubbId NOT IN ('8','10','12','13')";
+
+            if (roles.Contains("HistoryRegisterKalaVazifeh"))
+                return $"{baseCondition} AND StatusConfirmation03 = 320 AND TblLuLookupSubbId IN ('8','10','12','13')";
+
+            return null;
         }
 
         [HttpPost]
