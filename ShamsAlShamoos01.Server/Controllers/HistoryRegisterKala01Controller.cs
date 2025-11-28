@@ -155,16 +155,28 @@ namespace ShamsAlShamoos01.Server.Controllers
             return "1 = 0";
         }
 
-        private static string BuildYeganClause(List<string> roles, string unitCondition, string regUnitCondition, bool isPass, bool isWait, bool notClear)
+        private static string BuildYeganClause(
+            List<string> roles,
+            string unitCondition,
+            string regUnitCondition,
+            bool isPass,
+            bool isWait,
+            bool notClear)
         {
             if (!roles.Contains("HistoryRegisterKalaYEGAN"))
+            {
                 return null;
+            }
 
             if (roles.Contains("StatusHistoryRegisterKalaConfirmation02"))
+            {
                 return GetClauseForConfirmation02(regUnitCondition, isPass, isWait);
+            }
 
             if (roles.Contains("StatusHistoryRegisterKalaConfirmation03"))
+            {
                 return GetClauseForConfirmation03(regUnitCondition, isPass, isWait, notClear);
+            }
 
             // شرط پیش‌فرض
             return $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
@@ -174,11 +186,18 @@ namespace ShamsAlShamoos01.Server.Controllers
         private static string GetClauseForConfirmation02(string regUnitCondition, bool isPass, bool isWait)
         {
             if (isPass)
+            {
                 return $"{regUnitCondition} AND StatusConfirmation02 = 320";
+            }
+
             if (isWait)
+            {
                 return $"{regUnitCondition} AND StatusConfirmation02 = 319";
+            }
+
             return null;
         }
+
 
         // کمکی برای StatusConfirmation03
         private static string GetClauseForConfirmation03(string regUnitCondition, bool isPass, bool isWait, bool notClear)
