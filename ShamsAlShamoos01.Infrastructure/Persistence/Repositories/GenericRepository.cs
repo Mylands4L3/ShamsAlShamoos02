@@ -1,93 +1,51 @@
-﻿using ShamsAlShamoos01.Infrastructure.Persistence.Contexts;
+﻿// نسخه بدون فیلتر و ترتیب
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using ShamsAlShamoos01.Infrastructure.Persistence.Contexts;
 using System.Linq.Expressions;
-
-namespace ShamsAlShamoos01.Infrastructure.Persistence.Repositories
+public class GenericClass<T> where T : class
 {
-    public class GenericClass<T> : IGenericRepository<T> where T : class
+    private readonly ApplicationDbContext _context;
+    private readonly DbSet<T> _table;
+
+    public GenericClass(ApplicationDbContext context)
     {
-        private readonly ApplicationDbContext _context;
-        private readonly DbSet<T> _table;
+        _context = context;
+        _table = _context.Set<T>();
+    }
 
-        public GenericClass(ApplicationDbContext context)
-        {
-            _context = context;
-            _table = _context.Set<T>();
-        }
+    // نسخه بدون فیلتر و ترتیب
+    public IEnumerable<T> GetAll()
+    {
+        return _table.ToList();
+    }
 
-        // CREATE
-        public void Create(T entity)
-        {
-            _table.Add(entity);
-        }
+    // نسخه با فیلتر
+    public IEnumerable<T> GetAll(Expression<Func<T, bool>> filter)
+    {
+        return _table.Where(filter).ToList();
+    }
 
-        // UPDATE
-        public void Update(T entity)
-        {
-            _table.Attach(entity);
-            _context.Entry(entity).State = EntityState.Modified;
-        }
+    // نسخه با ترتیب
+    public IEnumerable<T> GetAll(Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
+    {
+        var query = _table.AsQueryable();
+        query = orderBy(query);
+        return query.ToList();
+    }
 
-        // DELETE
-        public void Delete(T entity)
-        {
-            if (_context.Entry(entity).State == EntityState.Detached)
-            {
-                _table.Attach(entity);
-            }
+    // نسخه با فیلتر و ترتیب
+    public IEnumerable<T> GetAll(
+        Expression<Func<T, bool>> filter,
+        Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
+    {
+        IQueryable<T> query = _table;
 
-            _table.Remove(entity);
-        }
+        if (filter != null)
+            query = query.Where(filter);
 
-        public void DeleteById(object id)
-        {
-            var entity = GetById(id);
-            if (entity != null)
-            {
-                Delete(entity);
-            }
-        }
+        if (orderBy != null)
+            query = orderBy(query);
 
-        // GET BY ID
-        public T GetById(object id)
-        {
-            return _table.Find(id);
-        }
-
-        // GET ALL
-        public IEnumerable<T> GetAll(Expression<Func<T, bool>> filter = null)
-        {
-            IQueryable<T> query = _table;
-
-            if (filter != null)
-            {
-                query = query.Where(filter);
-            }
-
-            return query.ToList();
-        }
-
-        // GET WITH ORDER & FILTER
-        public IEnumerable<T> Get(
-            Expression<Func<T, bool>> filter = null,
-            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null)
-        {
-            IQueryable<T> query = _table;
-
-            if (filter != null)
-            {
-                query = query.Where(filter);
-            }
-
-            if (orderBy != null)
-            {
-                query = orderBy(query);
-            }
-
-            return query.ToList();
-        }
+        return query.ToList();
     }
 }
