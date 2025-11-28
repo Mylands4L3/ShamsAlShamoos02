@@ -11,11 +11,6 @@ namespace ShamsAlShamoos01.Infrastructure
             // 🔹 ثبت سرویس‌های Infrastructure
             services.AddScoped<QrCodeService>();
             services.AddScoped<QrBatchService>();
-
-            // 🔹 ثبت دیگر سرویس‌ها مثل Repository و UnitOfWork اگر داری
-            // services.AddScoped<IUnitOfWork, UnitOfWork>();
-            // services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-
             return services;
         }
     }

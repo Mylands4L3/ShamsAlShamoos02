@@ -19,36 +19,7 @@ var licenseKey = "MTU4NUAzMjM3MkUzMTJFMzluT08wbzRnYm4zUlFDOVRzWVpYbUtuSEl0aUhTZm
 
 SyncfusionLicenseProvider.RegisterLicense(licenseKey);
 
-//if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "SyncfusionLicense.txt")))
-//{
-//    string licenseKey = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "SyncfusionLicense.txt")).Trim();
-
-//    SyncfusionLicenseProvider.RegisterLicense(licenseKey);
-
-//    // دیگر نیازی به تزریق JS نیست
-//}
-
-
-//if (File.Exists(Directory.GetCurrentDirectory() + "/SyncfusionLicense.txt"))
-//{
-//    string licenseKey = File.ReadAllText(Directory.GetCurrentDirectory() + "/SyncfusionLicense.txt").Trim();
-//    SyncfusionLicenseProvider.RegisterLicense(licenseKey);
-//    if (File.Exists(Directory.GetCurrentDirectory() + "/wwwroot/scripts/index.js"))
-//    {
-//        string regexPattern = "ej.base.registerLicense(.*);";
-//        string jsContent = File.ReadAllText(Directory.GetCurrentDirectory() + "/wwwroot/scripts/index.js");
-//        MatchCollection matchCases = Regex.Matches(jsContent, regexPattern);
-//        foreach (Match matchCase in matchCases)
-//        {
-//            var replaceableString = matchCase.ToString();
-//            jsContent = jsContent.Replace(replaceableString, "ej.base.registerLicense('" + licenseKey + "');");
-//        }
-//        File.WriteAllText(Directory.GetCurrentDirectory() + "/wwwroot/scripts/index.js", jsContent);
-//    }
-//}
-
-
-
+ 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
@@ -59,26 +30,7 @@ builder.Services.AddScoped<HistoryRegisterService>();
 // رجیستر Syncfusion
 builder.Services.AddSyncfusionBlazor();
 
-
-// تنظیم HttpClient بر اساس محیط
-//builder.Services.AddScoped(sp =>
-//{
-//    string baseUrl;
-//    if (builder.HostEnvironment.IsDevelopment())
-//    {
-//        baseUrl = "http://localhost:5224/";
-//    }
-//    else
-//    {
-//        baseUrl = "/";
-//    }
-
-//    return new HttpClient
-//    {
-//        BaseAddress = new Uri(baseUrl, UriKind.RelativeOrAbsolute)
-//    };
-//});
-
+ 
 
 
 

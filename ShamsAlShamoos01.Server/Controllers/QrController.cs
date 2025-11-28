@@ -46,7 +46,9 @@ namespace ShamsAlShamoos01.Server.Controllers
             string filePath = Path.Combine(solutionRoot, "QrFiles", fileName + ".png");
 
             if (!System.IO.File.Exists(filePath))
+            {
                 return NotFound($"File not found: {filePath}");
+            }
 
             var bytes = System.IO.File.ReadAllBytes(filePath);
             return File(bytes, "image/png");

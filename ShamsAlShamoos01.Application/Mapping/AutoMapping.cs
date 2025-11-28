@@ -13,10 +13,7 @@ namespace ShamsAlShamoos01.Application.Mapping
     {
         public AutoMapping()
         {
-            //Mapper.Configuration.AllowNullCollections = true;
             AllowNullCollections = true;
-            //AllowNullCollections = false;
-
             CreateMap<HistoryRegisterKala01, HistoryRegisterKala01ViewModelcat>().ReverseMap();
             CreateMap<HistoryRegisterKala01, HistoryRegisterKala01ViewModel_Update>().ReverseMap();
 
