@@ -13,7 +13,6 @@ namespace ShamsAlShamoos01.Infrastructure.Persistence.Repositories
         void DeleteById(object id);
 
         T GetById(object id);
-        IEnumerable<T> GetAll(Expression<Func<T, bool>> filter = null);
 
         // ============================
         // متدهای Get با overloading
@@ -27,5 +26,8 @@ namespace ShamsAlShamoos01.Infrastructure.Persistence.Repositories
 
         // فیلتر و ترتیب
         IEnumerable<T> Get(Expression<Func<T, bool>> filter, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy);
+
+        // بدون فیلتر و ترتیب (همان GetAll قبلی)
+        IEnumerable<T> GetAll();
     }
 }

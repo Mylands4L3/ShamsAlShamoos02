@@ -155,41 +155,44 @@ namespace ShamsAlShamoos01.Server.Controllers
             return "1 = 0";
         }
 
-        // متدهای کمکی:
-
         private static string BuildYeganClause(List<string> roles, string unitCondition, string regUnitCondition, bool isPass, bool isWait, bool notClear)
         {
             if (!roles.Contains("HistoryRegisterKalaYEGAN"))
-            {
                 return null;
-            }
-
-            string clause = null;
 
             if (roles.Contains("StatusHistoryRegisterKalaConfirmation02"))
-            {
-                clause = isPass ? $"{regUnitCondition} AND StatusConfirmation02 = 320"
-                                : isWait ? $"{regUnitCondition} AND StatusConfirmation02 = 319"
-                                         : null;
-            }
-            else if (roles.Contains("StatusHistoryRegisterKalaConfirmation03"))
-            {
-                // StatusConfirmation02 همیشه 320 است
-                string baseClause = $"{regUnitCondition} AND StatusConfirmation02 = 320";
+                return GetClauseForConfirmation02(regUnitCondition, isPass, isWait);
 
-                clause = isPass ? $"{baseClause} AND StatusConfirmation03 = 320"
-                         : notClear ? $"{baseClause} AND StatusConfirmation03 = 321"
-                         : isWait ? $"{baseClause} AND StatusConfirmation03 = 319"
-                         : null;
-            }
+            if (roles.Contains("StatusHistoryRegisterKalaConfirmation03"))
+                return GetClauseForConfirmation03(regUnitCondition, isPass, isWait, notClear);
 
-            // شرط پیش‌فرض اگر هیچ یک از نقش‌های بالا نبود
-            if (string.IsNullOrEmpty(clause))
-            {
-                clause = $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
-            }
+            // شرط پیش‌فرض
+            return $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
+        }
 
-            return clause;
+        // کمکی برای StatusConfirmation02
+        private static string GetClauseForConfirmation02(string regUnitCondition, bool isPass, bool isWait)
+        {
+            if (isPass)
+                return $"{regUnitCondition} AND StatusConfirmation02 = 320";
+            if (isWait)
+                return $"{regUnitCondition} AND StatusConfirmation02 = 319";
+            return null;
+        }
+
+        // کمکی برای StatusConfirmation03
+        private static string GetClauseForConfirmation03(string regUnitCondition, bool isPass, bool isWait, bool notClear)
+        {
+            string baseClause = $"{regUnitCondition} AND StatusConfirmation02 = 320";
+
+            if (isPass)
+                return $"{baseClause} AND StatusConfirmation03 = 320";
+            if (notClear)
+                return $"{baseClause} AND StatusConfirmation03 = 321";
+            if (isWait)
+                return $"{baseClause} AND StatusConfirmation03 = 319";
+
+            return null;
         }
 
         private static string BuildYegan00Clause(List<string> roles, string baseCondition, string unitCondition, bool isPass, bool isWait)
