@@ -1,39 +1,43 @@
-﻿
-
-
-using AutoMapper;
- using ShamsAlShamoos01.Infrastructure.Persistence.Contexts;
-using ShamsAlShamoos01.Infrastructure.Persistence.Repositories;
-using ShamsAlShamoos01.Server.Services;
+﻿using AutoMapper;
 using Dapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using ShamsAlShamoos01.Infrastructure.Persistence.Contexts;
+using ShamsAlShamoos01.Infrastructure.Persistence.Repositories;
+using ShamsAlShamoos01.Infrastructure.Persistence.UnitOfWork;
+using ShamsAlShamoos01.Server.Services;
+using ShamsAlShamoos01.Shared.Entities;
+using ShamsAlShamoos01.Shared.Models;
 using Syncfusion.Blazor;
 using Syncfusion.Blazor.Data;
-using System.Collections;
 using System.Globalization;
 using System.Linq.Expressions;
-using ShamsAlShamoos01.Shared.Entities;
-using ShamsAlShamoos01.Infrastructure.Persistence.UnitOfWork;
-using ShamsAlShamoos01.Shared.Models;
 
 namespace ShamsAlShamoos01.Server.Controllers
 {
-
-    [Microsoft.AspNetCore.Mvc.Route("api/[controller]/[action]")]
-    [Microsoft.AspNetCore.Mvc.ApiController]
-
+    [Route("api/[controller]/[action]")]
+    [ApiController]
     public class HistoryRegisterKala01Controller : ControllerBase
     {
-        public System.Collections.Generic.List<HistoryRegisterKala01ViewModelcat> _View_DailyPlanEvidence02 { get; set; }
-        public static List<HistoryRegisterKala01ViewModelcat> PersonellistDailyPlan01 = new List<HistoryRegisterKala01ViewModelcat>();
+        private readonly IUnitOfWork _context;
+        private readonly ILogger<HistoryRegisterKala01Controller> _logger;
+        private readonly IDapperGenericRepository _repository;
+        private readonly IMapper _mapper;
+        private readonly UserManager<ApplicationUsers> _userManager;
+        private readonly ApplicationDbContext _contextDB;
+        private readonly APIDataService01 _dataService;
+        private readonly PersianCalendar _persianCalendar = new();
 
-        public string jsonSelectedMelliCode01
+        public static List<HistoryRegisterKala01ViewModelcat> PersonellistDailyPlan01 = new();
+        public List<HistoryRegisterKala01ViewModelcat> _View_DailyPlanEvidence02 { get; set; }
+
+        public string JsonSelectedMelliCode01
         {
             get => HttpContext.Session.GetString("jsonSelectedMelliCode01") ?? "";
             set => HttpContext.Session.SetString("jsonSelectedMelliCode01", value);
         }
+
         public List<string> SelectedMelliCode01
         {
             get
@@ -41,53 +45,27 @@ namespace ShamsAlShamoos01.Server.Controllers
                 var value = HttpContext.Session.GetString("SelectedMelliCode01");
                 return string.IsNullOrEmpty(value) ? new List<string>() : JsonConvert.DeserializeObject<List<string>>(value);
             }
-            set
-            {
-                var json = JsonConvert.SerializeObject(value);
-                HttpContext.Session.SetString("SelectedMelliCode01", json);
-            }
+            set => HttpContext.Session.SetString("SelectedMelliCode01", JsonConvert.SerializeObject(value));
         }
 
+        private readonly Expression<Func<HistoryRegisterKala01, bool>> _tblMasterFilter = item => true;
 
-
-        Expression<Func<HistoryRegisterKala01, bool>> TblMasterFilter = item => 1 == 1;
-
-
-
-
-        private readonly IUnitOfWork _context;
-        private readonly ILogger<HistoryRegisterKala01Controller> _logger;
-        private readonly IDapperGenericRepository _repository;
-        private readonly IMapper _mapper;
-        private readonly UserManager<ApplicationUsers> _userManager;
-         //private readonly IHttpContextAccessor _httpContextAccessor;
-         private readonly ApplicationDbContext _contextDB;
-        private readonly APIDataService01 _DataService;
-
-        private PersianCalendar pc = new PersianCalendar();
-
-        //@inject DailyPlanDataService DataService
-        //private readonly APIDataService01 _DataService;
-        //private readonly APIDataService01<UnitCountAmar01ViewModelcat> _DataUnitCountAmar01Service;
-        //private readonly APIDataService01<DailyPlanEvidenceStatAmar01Summary01ViewModelcat> _DataPersonalStatAmarSummary01;
-
-        public HistoryRegisterKala01Controller(ApplicationDbContext contextDB, ILogger<HistoryRegisterKala01Controller> logger,
-                                IUnitOfWork context, IMapper mapper,
-                             APIDataService01 dataService,
-                        UserManager<ApplicationUsers> userManager ,
-                                IDapperGenericRepository repository )
+        public HistoryRegisterKala01Controller(
+            ApplicationDbContext contextDB,
+            ILogger<HistoryRegisterKala01Controller> logger,
+            IUnitOfWork context,
+            IMapper mapper,
+            APIDataService01 dataService,
+            UserManager<ApplicationUsers> userManager,
+            IDapperGenericRepository repository)
         {
             _logger = logger;
             _context = context;
             _repository = repository;
             _contextDB = contextDB;
-            _DataService = dataService;
-            //_DataPersonalStatAmarSummary01 = dataPersonalStatAmarSummary01;
-            //_DataUnitCountAmar01Service = dataUnitCountAmar01Service;
-
+            _dataService = dataService;
             _mapper = mapper;
             _userManager = userManager;
- 
         }
 
         public class TestRequest
@@ -101,37 +79,25 @@ namespace ShamsAlShamoos01.Server.Controllers
             return Ok(new { message = $"Hello {request.Name}" });
         }
 
-
-
-        //public class LoadDataRequest
-        //{
-        //    public string UserId { get; set; }
-        //    //public List<string> Roles { get; set; } = new();
-        //    public DataManagerRequest DataManager { get; set; } = new();
-        //}
-
         [HttpPost]
         public async Task<IActionResult> LoadData([FromBody] LoadDataRequest request)
         {
             try
             {
+                const string whereClause = "1=1";
+                const string viewName = "dbo.View_HistoryRegisterKala03_Tbl";
 
-                string whereClauseHistoryRegisterKala01 = "1=1";
-                DateTime strStartDate = DateTime.Now.Date;    // بدون AddDays(0) فقط Date
-                DateTime strEndDate = DateTime.Now.Date.AddDays(1);
-  
                 var parameters = new DynamicParameters();
-                string WhatViewSelect = "dbo.View_HistoryRegisterKala03_Tbl";
-                parameters.Add("@ViewSelect", WhatViewSelect);
-                //parameters.Add("@WHERE", whereClauseHistoryRegisterKala01 + "  ORDER BY   Date01 desc ");
-                parameters.Add("@WHERE", whereClauseHistoryRegisterKala01 + "   ");
-                List<HistoryRegisterKala01ViewModel_Update> GaurdActivity01 = _repository.ListFilter<HistoryRegisterKala01ViewModel_Update>("View_Dapper01", parameters, commandTimeout: 1300);
-                _DataService.SetHistoryRegisterKala01_Update(request.UserId, GaurdActivity01);  // ذخیره در سرویس
+                parameters.Add("@ViewSelect", viewName);
+                parameters.Add("@WHERE", whereClause);
 
-                var dataSource = GaurdActivity01.ToList();
-                IEnumerable result = dataSource;
-                return Ok(result);              // یا
-             }
+                var guardActivity = _repository.ListFilter<HistoryRegisterKala01ViewModel_Update>(
+                    "View_Dapper01", parameters, commandTimeout: 1300);
+
+                _dataService.SetHistoryRegisterKala01_Update(request.UserId, guardActivity);
+
+                return Ok(guardActivity.ToList());
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "LoadData Error");
@@ -139,69 +105,52 @@ namespace ShamsAlShamoos01.Server.Controllers
             }
         }
 
-
-
-        private string BuildRoleBasedWhereClause(List<string> userRoles, string baseCondition, string unitCondition, string RegunitCondition, bool includeStatus01P, string Status01P, int countDailyPlans01Ready)
+        private static string BuildRoleBasedWhereClause(List<string> userRoles, string baseCondition, 
+            string unitCondition, string regUnitCondition, string status01P)
         {
-            var whereClause = $"{baseCondition} {unitCondition}";
-            var RegwhereClause = $"{baseCondition} {RegunitCondition}";
-
-            bool isPass = Status01P == "PassSignature01";
-            bool isWait = Status01P == "WaitForSignature01";
-            bool NotCleare01 = Status01P == "NotCleare01";
+            bool isPass = status01P == "PassSignature01";
+            bool isWait = status01P == "WaitForSignature01";
+            bool notClear = status01P == "NotCleare01";
 
             if (userRoles.Contains("HistoryRegisterKalaYEGAN"))
             {
-                //return $"{baseCondition} AND StatusConfirmation03 = 320 ";
-
                 if (userRoles.Contains("StatusHistoryRegisterKalaConfirmation02"))
                 {
-                    if (isPass)
-                        return $"{RegwhereClause} AND StatusConfirmation02 = 320";
-                    if (isWait)
-                        return $"{RegwhereClause} AND StatusConfirmation02 = 319";
+                    if (isPass) return $"{regUnitCondition} AND StatusConfirmation02 = 320";
+                    if (isWait) return $"{regUnitCondition} AND StatusConfirmation02 = 319";
                 }
 
                 if (userRoles.Contains("StatusHistoryRegisterKalaConfirmation03"))
                 {
-                    if (isPass)
-                        return $"{RegwhereClause} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
-                    if (NotCleare01)
-                        return $"{RegwhereClause} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 321";
-                    if (isWait)
-                        return $"   StatusConfirmation02 = 320 AND StatusConfirmation03 = 319 {RegunitCondition}";
+                    if (isPass) return $"{regUnitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
+                    if (notClear) return $"{regUnitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 321";
+                    if (isWait) return $"StatusConfirmation02 = 320 AND StatusConfirmation03 = 319 {regUnitCondition}";
                 }
 
                 if (!userRoles.Contains("StatusHistoryRegisterKalaConfirmation02,StatusHistoryRegisterKalaConfirmation03"))
                 {
-                    return $"{whereClause} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
-
+                    return $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
                 }
-
             }
 
             if (userRoles.Contains("HistoryRegisterKalaYEGAN00"))
             {
                 if (userRoles.Contains("StatusHistoryRegisterKalaConfirmation02"))
                 {
-                    if (isPass)
-                        return $"{baseCondition} AND StatusConfirmation02 = 320";
-                    if (isWait)
-                        return $"{baseCondition} AND StatusConfirmation02 = 319";
+                    if (isPass) return $"{baseCondition} AND StatusConfirmation02 = 320";
+                    if (isWait) return $"{baseCondition} AND StatusConfirmation02 = 319";
                 }
 
                 if (userRoles.Contains("StatusHistoryRegisterKalaConfirmation03"))
                 {
-                    if (isPass)
-                        return $"{whereClause} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
-                    if (isWait)
-                        return $"   StatusConfirmation02 = 320 AND StatusConfirmation03 = 319 {unitCondition}";
+                    if (isPass) return $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
+                    if (isWait) return $"StatusConfirmation02 = 320 AND StatusConfirmation03 = 319 {unitCondition}";
                 }
             }
-            //AND
-            if (userRoles.Contains("HistoryRegisterKalaALL") && Status01P == "AllPassSignature01")
+
+            if (userRoles.Contains("HistoryRegisterKalaALL") && status01P == "AllPassSignature01")
             {
-                return $"{baseCondition} AND StatusConfirmation03 = 320 ";
+                return $"{baseCondition} AND StatusConfirmation03 = 320";
             }
 
             if (userRoles.Contains("HistoryRegisterKalaPayvar"))
@@ -209,67 +158,29 @@ namespace ShamsAlShamoos01.Server.Controllers
                 return $"{baseCondition} AND StatusConfirmation03 = 320 AND TblLuLookupSubbId not in ('8','10','12','13')";
             }
 
-
             if (userRoles.Contains("HistoryRegisterKalaVazifeh"))
             {
-                return $"{baseCondition} AND StatusConfirmation03 = 320 AND TblLuLookupSubbId  in ('8','10','12','13')";
+                return $"{baseCondition} AND StatusConfirmation03 = 320 AND TblLuLookupSubbId in ('8','10','12','13')";
             }
 
-
-
-
-            //                            case "Payvar":
-            //                userIdFilter = item => Convert.ToDecimal(item.DocumentNO01.Substring(0, 10).Trim().Replace("/", "")) >= Convert.ToDecimal(dm.StartDate.Replace("/", ""))
-            //&& Convert.ToDecimal(item.DocumentNO01.Substring(0, 10).Trim().Replace("/", "")) < Convert.ToDecimal(dm.EndDate.Replace("/", ""))
-            //&& (item.oo_CrewDailyPesronel.ooDRJCOD.TblLuLookupSubbId != 8 && item.oo_CrewDailyPesronel.ooDRJCOD.TblLuLookupSubbId != 10 && item.oo_CrewDailyPesronel.ooDRJCOD.TblLuLookupSubbId != 12 && item.oo_CrewDailyPesronel.ooDRJCOD.TblLuLookupSubbId != 13)
-            //;
-            //                break;
-
-
-
-            //                break;
-
-            //            case "Vazifeh":
-
-            //                userIdFilter = item => Convert.ToDecimal(item.DocumentNO01.Substring(0, 10).Trim().Replace("/", "")) >= Convert.ToDecimal(dm.StartDate.Replace("/", ""))
-            //&& Convert.ToDecimal(item.DocumentNO01.Substring(0, 10).Trim().Replace("/", "")) < Convert.ToDecimal(dm.EndDate.Replace("/", ""))
-            //&& (item.oo_CrewDailyPesronel.ooDRJCOD.TblLuLookupSubbId == 8 || item.oo_CrewDailyPesronel.ooDRJCOD.TblLuLookupSubbId == 10 || item.oo_CrewDailyPesronel.ooDRJCOD.TblLuLookupSubbId == 12 || item.oo_CrewDailyPesronel.ooDRJCOD.TblLuLookupSubbId == 13)
-
-            //    ;
-
-
-
-
-
-
-
-
-
-
-
-
-            return "1 = 0"; // دسترسی ندارند
+            return "1 = 0";
         }
-
-
 
         [HttpPost]
-        public async void OnPostRemove([FromBody] CRUDModel<HistoryRegisterKala01ViewModel_Update> value)
+        public async Task<IActionResult> OnPostRemove([FromBody] CRUDModel<HistoryRegisterKala01ViewModel_Update> value)
         {
             _context.HistoryRegisterKala01UW.DeleteById(value.Key.ToString());
-            //await _hubContext.Clients.All.SendAsync("ReceiveUpdate", "refresh");
-
-            _context.save();
-
+            _context.Save();
+            return Ok();
         }
+
         public class CombinedInsertRequestModel
         {
-            public Syncfusion.Blazor.DataManagerRequest DataRequest { get; set; }
+            public DataManagerRequest DataRequest { get; set; }
             public CRUDModel<HistoryRegisterKala01ViewModel_Update> CrudModel { get; set; }
             public List<string> Roles { get; set; }
             public int? YeganUser { get; set; }
             public string StartDate { get; set; }
-
             public string UserId { get; set; }
         }
 
@@ -279,70 +190,43 @@ namespace ShamsAlShamoos01.Server.Controllers
             try
             {
                 var now = DateTime.Now;
-                var dateDoc02 = $"{pc.GetYear(now):0000}/{pc.GetMonth(now):00}/{pc.GetDayOfMonth(now):00}";
+                var dateDoc02 = $"{_persianCalendar.GetYear(now):0000}/{_persianCalendar.GetMonth(now):00}/{_persianCalendar.GetDayOfMonth(now):00}";
                 var dateDoc01 = model.StartDate;
+
                 var lastDocNo = _context.HistoryRegisterKala01UW
-                      .Get(u => u.DocumentNO01.StartsWith(dateDoc01), q => q.OrderByDescending(d => d.DocumentNO01))
-                      .Select(u => u.DocumentNO01)
-                      .FirstOrDefault();
+                    .Get(u => u.DocumentNO01.StartsWith(dateDoc01), q => q.OrderByDescending(d => d.DocumentNO01))
+                    .Select(u => u.DocumentNO01)
+                    .FirstOrDefault();
 
-                //var newDocNo = CreateSerialNOPlan01.CreateNewNoFolder01(lastDocNo, dateDoc01);
                 var viewModel = model.CrudModel.Value;
-                //string UjobPesronelID = _context.UjobPesronel01UW.Get(u => u.IsHaveJob == true && u.UserID == model.UserId).Select(u => u.UjobPesronel01ID).Take(1).ToList().FirstOrDefault();
 
-                //viewModel.DocumentNO01 = newDocNo;
+                // Set confirmation statuses
                 viewModel.StatusConfirmation01 = 320;
                 viewModel.StatusConfirmation02 = viewModel.StatusConfirmation03 =
                 viewModel.StatusConfirmation04 = viewModel.StatusConfirmation05 =
                 viewModel.StatusConfirmation06 = 319;
-                //viewModel.Vartext01 = viewModel.Vartext01.Trim();
-                //viewModel.Vartext02 = viewModel.Vartext02.Trim();
-                //viewModel.Vartext03 = viewModel.Vartext03.Trim();
-                //viewModel.Vartext04 = viewModel.Vartext04.Trim();
-                //viewModel.Vartext05 = viewModel.Vartext05.Trim();
-                //viewModel.Vartext06 = viewModel.Vartext06.Trim();
+
                 var entity = _mapper.Map<HistoryRegisterKala01>(viewModel);
-                 entity.HistoryRegisterKala01ID = Guid.NewGuid().ToString();
+                entity.HistoryRegisterKala01ID = Guid.NewGuid().ToString();
 
                 _context.HistoryRegisterKala01UW.Create(entity);
-                _context.save();
+                _context.Save();
 
+                // Update document number
                 var parameters = new DynamicParameters();
                 parameters.Add("@HistoryRegisterKala01ID", entity.HistoryRegisterKala01ID);
 
-                var updatedData = _repository.ListFilter<HistoryRegisterKala01ViewModel_Update>(
+                _repository.ListFilter<HistoryRegisterKala01ViewModel_Update>(
                     "Update_HistoryRegisterKala01_DocumentNO01", parameters, commandTimeout: 1300);
 
-
-                //string whereClauseHistoryRegisterKala01 = $"HistoryRegisterKala01ID IN ('{entity.HistoryRegisterKala01ID}') ";
-
-                //var parameters1 = new DynamicParameters();
-                //string WhatViewSelect = "dbo.View_HistoryRegisterKala03_Tbl";
-                //parameters1.Add("@ViewSelect", WhatViewSelect);
-                //parameters1.Add("@WHERE", whereClauseHistoryRegisterKala01 + " and strTextContent01 is not null ORDER BY UnitID01, DarajeeGheshrID, DRJ_COD DESC, EMP_NUM, Date01 ,TypeLetter01");
-
-                //List<HistoryRegisterKala01ViewModel_Update> data11 = _repository.ListFilter<HistoryRegisterKala01ViewModel_Update>("View_Dapper01", parameters1, commandTimeout: 1300);
-
-                //var finalRecord = data11.FirstOrDefault();
-
-
-                //var viewModelResult = _mapper.Map<HistoryRegisterKala01ViewModel_Update>(finalRecord);
-                //return new JsonResult(viewModelResult);
-
-
-                //return new JsonResult(finalRecord);
-
                 return Ok(1);
-
-
             }
             catch (Exception ex)
             {
-                // TODO: Log exception ex
+                _logger.LogError(ex, "OnPostInsert Error");
                 return StatusCode(500, "خطایی در سرور رخ داده است");
             }
         }
-
 
         public class CombinedRequestModel
         {
@@ -352,17 +236,9 @@ namespace ShamsAlShamoos01.Server.Controllers
             public string UserId { get; set; }
         }
 
-
         [HttpPost]
-        //[HttpPut]
-        //public async Task<IActionResult> OnPostUpdate([FromBody] LoadDataRequest request, [FromBody] CRUDModel<HistoryRegisterKala01ViewModel_Update> model.CrudModel)
         public async Task<IActionResult> OnPostUpdate([FromBody] CombinedRequestModel model)
         {
-
-
-
-
-
             try
             {
                 if (model.CrudModel?.Value == null)
@@ -372,76 +248,61 @@ namespace ShamsAlShamoos01.Server.Controllers
                 if (data == null)
                     return NotFound("Record not found");
 
-                // به‌روزرسانی فیلدها
+                UpdateEntityBasedOnRoles(data, model.CrudModel.Value, model.Roles);
 
- 
-
- 
-                if (model.Roles.Contains("StatusHistoryRegisterKalaConfirmation02"))
-                {
-
-                    data.Vartext01 = model.CrudModel.Value.Vartext01;
-                    data.Vartext02 = model.CrudModel.Value.Vartext02;
-                    data.Vartext03 = model.CrudModel.Value.Vartext03;
-                    data.Vartext04 = model.CrudModel.Value.Vartext04;
-                    data.Vartext05 = model.CrudModel.Value.Vartext05;
-                    data.Vartext06 = model.CrudModel.Value.Vartext06;
-                    //data.Vartext07 = model.CrudModel.Value.Vartext07;
-                    //data.Vartext08 = model.CrudModel.Value.Vartext08;
-                    data.Vartext09 = model.CrudModel.Value.Vartext09;
-                    data.Vartext10 = model.CrudModel.Value.Vartext10;
-                    data.Vartext11 = model.CrudModel.Value.Vartext11;
-                    data.Vartext12 = model.CrudModel.Value.Vartext12;
-                    data.Vartext13 = model.CrudModel.Value.Vartext13;
-                    data.Vartext14 = model.CrudModel.Value.Vartext14;
-                    data.Vartext15 = model.CrudModel.Value.Vartext15;
-                    data.Vartext16 = model.CrudModel.Value.Vartext16;
-                    data.Vartext17 = model.CrudModel.Value.Vartext17;
-                    data.Vartext18 = model.CrudModel.Value.Vartext18;
-                    data.Vartext19 = model.CrudModel.Value.Vartext19;
-                    data.Vartext20 = model.CrudModel.Value.Vartext20;
-
-                }
-                if (model.Roles.Contains("StatusHistoryRegisterKalaConfirmation04"))
-                {
-
-                    //data.Vartext01 = model.CrudModel.Value.Vartext01;
-                    //data.Vartext02 = model.CrudModel.Value.Vartext02;
-                    //data.Vartext03 = model.CrudModel.Value.Vartext03;
-                    //data.Vartext04 = model.CrudModel.Value.Vartext04;
-                    //data.Vartext05 = model.CrudModel.Value.Vartext05;
-                    data.Vartext07 = model.CrudModel.Value.Vartext07;
-
-                }
- 
                 _context.HistoryRegisterKala01UW.Update(data);
-                _context.save(); // استفاده از نسخه Async
+                _context.Save();
 
-
-
+                // Update document number
                 var parameters = new DynamicParameters();
                 parameters.Add("@HistoryRegisterKala01ID", data.HistoryRegisterKala01ID);
 
-                var updatedData = _repository.ListFilter<HistoryRegisterKala01ViewModel_Update>(
+                _repository.ListFilter<HistoryRegisterKala01ViewModel_Update>(
                     "Update_HistoryRegisterKala01_DocumentNO01", parameters, commandTimeout: 1300);
-
-
-                //if (model.CrudModel.Value.StatusConfirmation02 == 320 && model.Roles.Contains("StatusHistoryRegisterKalaConfirmation02"))
-                //{
-                //    await _hubContext.Clients.All.SendAsync("ReceiveUpdate", "refresh");
-
-                //}
-
-                //await _hubContext.Clients.All.SendAsync("ReceiveUpdate", "refresh");
-                //await Clients.Others.SendAsync("ReceiveUpdatedData", updatedRecord);
 
                 return Ok(model.CrudModel.Value);
             }
             catch (Exception ex)
             {
-                // لاگ خطا
+                _logger.LogError(ex, "OnPostUpdate Error");
                 return StatusCode(500, "Internal server error");
             }
+        }
+
+        private static void UpdateEntityBasedOnRoles(HistoryRegisterKala01 entity, 
+            HistoryRegisterKala01ViewModel_Update viewModel, List<string> roles)
+        {
+            if (roles.Contains("StatusHistoryRegisterKalaConfirmation02"))
+            {
+                UpdateVartextFields02(entity, viewModel);
+            }
+
+            if (roles.Contains("StatusHistoryRegisterKalaConfirmation04"))
+            {
+                entity.Vartext07 = viewModel.Vartext07;
+            }
+        }
+
+        private static void UpdateVartextFields02(HistoryRegisterKala01 entity, HistoryRegisterKala01ViewModel_Update viewModel)
+        {
+            entity.Vartext01 = viewModel.Vartext01;
+            entity.Vartext02 = viewModel.Vartext02;
+            entity.Vartext03 = viewModel.Vartext03;
+            entity.Vartext04 = viewModel.Vartext04;
+            entity.Vartext05 = viewModel.Vartext05;
+            entity.Vartext06 = viewModel.Vartext06;
+            entity.Vartext09 = viewModel.Vartext09;
+            entity.Vartext10 = viewModel.Vartext10;
+            entity.Vartext11 = viewModel.Vartext11;
+            entity.Vartext12 = viewModel.Vartext12;
+            entity.Vartext13 = viewModel.Vartext13;
+            entity.Vartext14 = viewModel.Vartext14;
+            entity.Vartext15 = viewModel.Vartext15;
+            entity.Vartext16 = viewModel.Vartext16;
+            entity.Vartext17 = viewModel.Vartext17;
+            entity.Vartext18 = viewModel.Vartext18;
+            entity.Vartext19 = viewModel.Vartext19;
+            entity.Vartext20 = viewModel.Vartext20;
         }
     }
 }

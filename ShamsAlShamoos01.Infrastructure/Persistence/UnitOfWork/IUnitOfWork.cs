@@ -12,7 +12,7 @@ namespace ShamsAlShamoos01.Infrastructure.Persistence.UnitOfWork
 
         IEntityDataBaseTransaction BeginTransaction();
 
-        void save();
+        void Save();
         void Dispose();
     }
 }

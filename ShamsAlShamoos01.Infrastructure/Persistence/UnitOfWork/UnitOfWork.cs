@@ -31,7 +31,7 @@ namespace ShamsAlShamoos01.Infrastructure.Persistence.UnitOfWork
         // متدهای اینترفیس
         public IEntityDataBaseTransaction BeginTransaction() => new EntityDataBaseTransaction(_context);
 
-        public void save() => _context.SaveChanges();
+        public void Save() => _context.SaveChanges();
 
         public Task<int> SaveAsync() => _context.SaveChangesAsync();
 
