@@ -25,15 +25,18 @@ namespace ShamsAlShamoos01.Infrastructure.Services
             string protoPath = Path.Combine(basePath, "deploy.prototxt");
             string modelPath = Path.Combine(basePath, "res10_300x300_ssd_iter_140000.caffemodel");
             if (!File.Exists(protoPath) || !File.Exists(modelPath))
+            {
                 throw new FileNotFoundException("Face detector model files missing");
+            }
 
             _faceDetector = CvDnn.ReadNetFromCaffe(protoPath, modelPath);
 
             // Load face embedder
             string embedderPath = Path.Combine(basePath, "openface_nn4.small2.v1.t7");
             if (!File.Exists(embedderPath))
+            {
                 throw new FileNotFoundException("Face embedder model file missing");
-
+            }
             _faceEmbedder = CvDnn.ReadNetFromTorch(embedderPath);
         }
 
@@ -42,66 +45,118 @@ namespace ShamsAlShamoos01.Infrastructure.Services
             var matches = new List<string>();
             string resultFolder = @"D:\upload\Result01";
 
-            // بررسی وجود فایل هدف
+            var targetEmbedding = GetTargetEmbedding(targetImagePath);
+            if (targetEmbedding == null) return matches;
+
+            EnsureResultFolderExists(resultFolder);
+            ProcessFilesInFolder(folderPath, targetEmbedding, threshold, resultFolder, matches);
+
+            return matches;
+        }
+
+        private float[]? GetTargetEmbedding(string targetImagePath)
+        {
             if (!File.Exists(targetImagePath))
             {
                 Console.WriteLine("Target image file not found.");
-                return matches;
+                return null;
             }
 
-            // ایجاد پوشه نتیجه در صورت عدم وجود
-            if (!Directory.Exists(resultFolder))
-                Directory.CreateDirectory(resultFolder);
-
-            var targetEmbeddings = GetEmbeddings(targetImagePath, out var targetFacesImagePath);
-
-            if (targetEmbeddings == null || targetEmbeddings.Count == 0)
+            var embeddings = GetEmbeddings(targetImagePath, out _);
+            if (embeddings == null || embeddings.Count == 0)
             {
                 Console.WriteLine("No face detected in target image.");
-                return matches;
+                return null;
             }
 
-            // فقط از اولین چهره در تصویر هدف استفاده می‌کنیم
-            var targetEmbedding = targetEmbeddings[0];
+            return embeddings[0];
+        }
 
-            foreach (var file in Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories)
-                .Where(f => f.ToLower().EndsWith(".jpg") || f.ToLower().EndsWith(".jpeg") ||
-                           f.ToLower().EndsWith(".png") || f.ToLower().EndsWith(".bmp")))
+        private void ProcessFilesInFolder(string folderPath, float[] targetEmbedding, double threshold, string resultFolder, List<string> matches)
+        {
+            foreach (var file in GetImageFiles(folderPath))
             {
-                var embeddings = GetEmbeddings(file, out var facesImgPath);
-                if (embeddings == null || embeddings.Count == 0)
-                {
-                    Console.WriteLine($"No face detected in file: {Path.GetFileName(file)}");
-                    continue;
-                }
+                ProcessFile(file, targetEmbedding, threshold, resultFolder, matches);
+            }
+        }
 
-                foreach (var emb in embeddings)
-                {
-                    double dist = CosineDistance(targetEmbedding, emb);
-                    Console.WriteLine($"Distance to {Path.GetFileName(file)}: {dist:F4}");
+        // ✅ بررسی وجود فایل هدف
+        private bool EnsureTargetImageExists(string path)
+        {
+            if (!File.Exists(path))
+            {
+                Console.WriteLine("Target image file not found.");
+                return false;
+            }
+            return true;
+        }
 
-                    if (dist < threshold)
-                    {
-                        matches.Add(file);
+        // ✅ ایجاد پوشه نتیجه در صورت عدم وجود
+        private void EnsureResultFolderExists(string folderPath)
+        {
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+        }
 
-                        // کپی فایل به پوشه نتیجه
-                        string destPath = Path.Combine(resultFolder, Path.GetFileName(file));
-                        try
-                        {
-                            File.Copy(file, destPath, overwrite: true);
-                            Console.WriteLine($"Copied {Path.GetFileName(file)} to result folder.");
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Failed to copy {Path.GetFileName(file)}: {ex.Message}");
-                        }
+        // ✅ دریافت اولین embedding از تصویر
+        private float[]? GetFirstFaceEmbedding(string imagePath)
+        {
+            var embeddings = GetEmbeddings(imagePath, out _);
+            if (embeddings == null || embeddings.Count == 0)
+            {
+                Console.WriteLine("No face detected in target image.");
+                return null;
+            }
+            return embeddings[0];
+        }
 
-                        break; // اگر یک چهره مشابه پیدا شد، به فایل بعدی برو
-                    }
-                }
+        // ✅ گرفتن لیست فایل‌های تصویر معتبر
+        private IEnumerable<string> GetImageFiles(string folderPath)
+        {
+            var extensions = new[] { ".jpg", ".jpeg", ".png", ".bmp" };
+            return Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories)
+                            .Where(f => extensions.Contains(Path.GetExtension(f).ToLower()));
+        }
+
+        // ✅ پردازش هر فایل برای تشابه
+        private void ProcessFile(string file, float[] targetEmbedding, double threshold, string resultFolder, List<string> matches)
+        {
+            var embeddings = GetEmbeddings(file, out _);
+            if (embeddings == null || embeddings.Count == 0)
+            {
+                Console.WriteLine($"No face detected in file: {Path.GetFileName(file)}");
+                return;
             }
 
-            return matches;
+            foreach (var emb in embeddings)
+            {
+                double dist = CosineDistance(targetEmbedding, emb);
+                Console.WriteLine($"Distance to {Path.GetFileName(file)}: {dist:F4}");
+
+                if (dist < threshold)
+                {
+                    matches.Add(file);
+                    CopyToResultFolder(file, resultFolder);
+                    break;
+                }
+            }
+        }
+
+        // ✅ کپی فایل به پوشه نتیجه
+        private void CopyToResultFolder(string file, string resultFolder)
+        {
+            string destPath = Path.Combine(resultFolder, Path.GetFileName(file));
+            try
+            {
+                File.Copy(file, destPath, overwrite: true);
+                Console.WriteLine($"Copied {Path.GetFileName(file)} to result folder.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to copy {Path.GetFileName(file)}: {ex.Message}");
+            }
         }
 
         private List<Rect> DetectFaces(Mat img, float confidenceThreshold = 0.2f)
@@ -160,7 +215,7 @@ namespace ShamsAlShamoos01.Infrastructure.Services
 
             var faces = DetectFaces(img);
             if (faces.Count == 0)
-                return null;
+            { return null; }
 
             var embeddings = new List<float[]>();
 
@@ -195,7 +250,9 @@ namespace ShamsAlShamoos01.Infrastructure.Services
         {
             double sum = 0;
             for (int i = 0; i < vector.Length; i++)
+            {
                 sum += vector[i] * vector[i];
+            }
 
             double norm = Math.Sqrt(sum);
             if (norm > 1e-6)
@@ -208,7 +265,7 @@ namespace ShamsAlShamoos01.Infrastructure.Services
         private double CosineDistance(float[] a, float[] b)
         {
             if (a.Length != b.Length)
-                return 1.0;
+            { return 1.0; }
 
             double dot = 0, na = 0, nb = 0;
             for (int i = 0; i < a.Length; i++)
@@ -222,8 +279,10 @@ namespace ShamsAlShamoos01.Infrastructure.Services
             nb = Math.Sqrt(nb);
 
             if (na < 1e-6 || nb < 1e-6)
+            {
                 return 1.0;
-
+            }
+ 
             double similarity = dot / (na * nb);
             return 1.0 - similarity;
         }

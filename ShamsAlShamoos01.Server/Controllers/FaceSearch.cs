@@ -21,8 +21,9 @@ namespace ShamsAlShamoos01.Server.Controllers
         public IActionResult Search([FromForm] IFormFile imageFile)
         {
             if (imageFile == null || imageFile.Length == 0)
+            {
                 return BadRequest("No file uploaded.");
-
+            }
             // مسیر موقت ذخیره فایل آپلود شده
             var tempFilePath = Path.Combine(Path.GetTempPath(), imageFile.FileName);
             using (var stream = System.IO.File.Create(tempFilePath))
@@ -36,7 +37,10 @@ namespace ShamsAlShamoos01.Server.Controllers
             // مسیر فولدر نتیجه
             string resultFolder = @"D:\upload\Result01";
             if (!Directory.Exists(resultFolder))
+            {
                 Directory.CreateDirectory(resultFolder);
+
+            }
 
             // جستجوی تصاویر مشابه
             var matches = _faceService.FindSimilarFaces(tempFilePath, folderPath);

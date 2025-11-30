@@ -22,7 +22,9 @@ namespace ShamsAlShamoos01.Server.Controllers
         public async Task<IActionResult> FindSimilar(IFormFile file)
         {
             if (file == null || file.Length == 0)
+            {
                 return BadRequest("هیچ فایلی آپلود نشده است.");
+            }
 
             // مسیر ذخیره موقت فایل آپلود شده
             string tempPath = Path.Combine(Path.GetTempPath(), file.FileName);
@@ -31,7 +33,6 @@ namespace ShamsAlShamoos01.Server.Controllers
                 await file.CopyToAsync(stream);
             }
             // مسیر پوشه QrFiles
-            //string folderPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "QrFiles"));
             string folderPath = @"D:\upload\indexImage1";
 
 

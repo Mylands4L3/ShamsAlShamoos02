@@ -19,7 +19,9 @@ namespace ShamsAlShamoos01.Server.Services
 
             var similar = _imageSearchService.FindSimilarImages(target, folder);
             foreach (var file in similar)
+            {
                 Console.WriteLine(file);
+            }
         }
     }
 }
