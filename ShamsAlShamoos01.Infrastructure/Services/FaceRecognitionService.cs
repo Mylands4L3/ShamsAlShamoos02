@@ -9,8 +9,13 @@ namespace ShamsAlShamoos01.Infrastructure.Services
 {
     public interface IFaceRecognitionService
     {
-        List<string> FindSimilarFaces(string targetImagePath, string folderPath, double threshold = 0.6);
+        // استفاده پیش‌فرض از threshold = 0.6
+        List<string> FindSimilarFaces(string targetImagePath, string folderPath);
+
+        // نسخه کامل که threshold دلخواه را می‌گیرد
+        List<string> FindSimilarFaces(string targetImagePath, string folderPath, double threshold);
     }
+
 
     public class FaceRecognitionService : IFaceRecognitionService
     {
@@ -39,15 +44,20 @@ namespace ShamsAlShamoos01.Infrastructure.Services
             }
             _faceEmbedder = CvDnn.ReadNetFromTorch(embedderPath);
         }
-
+        public List<string> FindSimilarFaces(string targetImagePath, string folderPath)
+        {
+            return FindSimilarFaces(targetImagePath, folderPath, 0.6);
+        }
         public List<string> FindSimilarFaces(string targetImagePath, string folderPath, double threshold = 0.6)
         {
             var matches = new List<string>();
             string resultFolder = @"D:\upload\Result01";
 
             var targetEmbedding = GetTargetEmbedding(targetImagePath);
-            if (targetEmbedding == null) return matches;
-
+            if (targetEmbedding == null)
+            {
+                return matches;
+            }
             EnsureResultFolderExists(resultFolder);
             ProcessFilesInFolder(folderPath, targetEmbedding, threshold, resultFolder, matches);
 

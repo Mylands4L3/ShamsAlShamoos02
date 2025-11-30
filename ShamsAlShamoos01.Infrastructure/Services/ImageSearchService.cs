@@ -25,8 +25,9 @@ namespace ShamsAlShamoos01.Infrastructure.Services
             var similarImages = new List<string>();
 
             if (!File.Exists(targetImagePath) || !Directory.Exists(folderPath))
+            {
                 return similarImages;
-
+            }
             Mat target = Cv2.ImRead(targetImagePath, ImreadModes.Grayscale);
 
             foreach (var file in Directory.GetFiles(folderPath))
