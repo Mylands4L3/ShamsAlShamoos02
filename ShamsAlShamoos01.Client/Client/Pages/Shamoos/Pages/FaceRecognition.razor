@@ -1,0 +1,39 @@
+﻿@page "/face-search"
+@inject HttpClient Http
+
+<h3>جستجوی چهره</h3>
+
+<InputFile OnChange="OnFileSelected" />
+@if (matches.Count > 0)
+{
+    <h4>تصاویر مشابه:</h4>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        @foreach (var img in matches)
+        {
+            <img src="@($"QrFiles/{img}")" width="150" />
+        }
+    </div>
+}
+
+@code {
+    private List<string> matches = new();
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        var content = new MultipartFormDataContent();
+        var streamContent = new StreamContent(file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024));
+        content.Add(streamContent, "imageFile", file.Name);
+
+        var response = await Http.PostAsync("api/FaceSearch/search", content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            matches = await response.Content.ReadFromJsonAsync<List<string>>();
+        }
+        else
+        {
+            matches.Clear();
+        }
+    }
+}

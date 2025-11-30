@@ -12,7 +12,7 @@ namespace ShamsAlShamoos01.Infrastructure
             services.AddScoped<QrCodeService>();
             services.AddScoped<QrBatchService>();
             services.AddScoped<Services.IImageSearchService, Services.ImageSearchService>();
-
+            services.AddSingleton<IFaceRecognitionService, FaceRecognitionService>();
             return services;
         }
 
