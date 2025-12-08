@@ -34,7 +34,9 @@ namespace ShamsAlShamoos01.Server.Controllers
         public IActionResult GenerateBatch([FromBody] string longText)
         {
             if (string.IsNullOrWhiteSpace(longText))
+            {
                 return BadRequest("Text cannot be empty");
+            }
 
             var files = _qrBatch.GenerateMultipleQrs(longText);
 

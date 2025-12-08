@@ -20,7 +20,10 @@ public class QrBatchService
     public List<string> GenerateMultipleQrs(string longText)
     {
         if (string.IsNullOrWhiteSpace(longText))
+        {
             return new List<string>();
+
+        }
 
         List<string> chunks = SplitText(longText, MaxChunkSize);
         List<string> fileNames = new();
