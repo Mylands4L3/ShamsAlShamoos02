@@ -10,10 +10,13 @@ public class QrBatchService
 
     // حداکثر کاراکتر در هر QR
     private const int MaxChunkSize = 300;
-    public QrBatchService(IWebHostEnvironment env)
+
+    public QrBatchService(IWebHostEnvironment env, QrCodeService qrCodeService)
     {
         _env = env;
+        _qrCodeService = qrCodeService;
     }
+
     public List<string> GenerateMultipleQrs(string longText)
     {
         if (string.IsNullOrWhiteSpace(longText))
