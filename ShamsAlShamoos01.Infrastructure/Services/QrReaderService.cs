@@ -10,7 +10,9 @@ namespace ShamsAlShamoos01.Infrastructure.Services
         public string ReadQrFromFile(string filePath)
         {
             if (!System.IO.File.Exists(filePath))
-                return null;
+            {
+                return null; 
+            }
 
             using var image = Image.Load<Rgba32>(filePath);
 
