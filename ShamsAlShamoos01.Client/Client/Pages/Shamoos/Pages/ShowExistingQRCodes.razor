@@ -1,0 +1,82 @@
+﻿@page "/ShowExistingQRCodes"
+@inject HttpClient Http
+
+<h2 class="text-center">📦 نمایش QRهای موجود و متن داخل آنها</h2>
+
+<button class="btn btn-primary mb-4" disabled="@IsLoading" @onclick="LoadExistingQRCodes">
+    @if (IsLoading)
+    {
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        <span> در حال بارگذاری...</span>
+       
+        }
+    else
+    {
+        <span>بارگذاری QRها</span>
+    }
+</button>
+
+@if (QrFiles?.Count > 0)
+{
+    <div class="row g-4">
+        @foreach (var qr in QrFiles)
+        {
+            <div class="col-md-3 col-sm-4 col-6 text-center">
+                <div class="p-2 border rounded shadow-sm">
+                    <img src="@($"{Http.BaseAddress}api/Qr/GetQrFile?fileName={qr}")"
+                         class="img-fluid rounded" alt="QR Code" />
+                    <div class="fw-bold mt-2">@qr</div>
+                    <div class="text-muted mt-1">@QrTexts.GetValueOrDefault(qr)</div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else if (!IsLoading)
+{
+    <p class="text-center text-muted">QRی موجود نیست</p>
+}
+
+@code {
+    public bool IsLoading { get; set; } = false;
+    public List<string> QrFiles { get; set; } = new();
+    public Dictionary<string, string> QrTexts { get; set; } = new();
+
+    private async Task LoadExistingQRCodes()
+    {
+        IsLoading = true;
+        QrFiles.Clear();
+        QrTexts.Clear();
+
+        try
+        {
+            // گرفتن لیست فایل‌ها از API
+            var files = await Http.GetFromJsonAsync<List<string>>("api/Qr/GetAllFiles");
+
+            if (files != null && files.Count > 0)
+            {
+                QrFiles = files;
+
+                // خواندن متن QRها همزمان
+                var tasks = QrFiles.Select(async qr =>
+                {
+                    try
+                    {
+                        var text = await Http.GetFromJsonAsync<string>($"api/Qr/ReadQr?fileName={qr}");
+                        QrTexts[qr] = text;
+                    }
+                    catch
+                    {
+                        QrTexts[qr] = "خواندن متن QR ناموفق بود";
+                    }
+                });
+
+                await Task.WhenAll(tasks);
+            }
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+}
