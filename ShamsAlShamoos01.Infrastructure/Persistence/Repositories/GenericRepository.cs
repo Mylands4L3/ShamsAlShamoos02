@@ -92,34 +92,17 @@ namespace ShamsAlShamoos01.Infrastructure.Persistence.Repositories
             return _table.Where(filter).ToList();
         }
 
-        // فقط ترتیب
-        public IEnumerable<T> GetAll(Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
-        {
-            IQueryable<T> query = _table.AsQueryable();
-            if (orderBy != null)
-            {
-                query = orderBy(query);
-            }
-
-            return query.ToList();
-        }
-
-        // فیلتر و ترتیب
         public IEnumerable<T> GetAll(
-            Expression<Func<T, bool>> filter,
-            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
+           Expression<Func<T, bool>> filter = null,
+           Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null)
         {
             IQueryable<T> query = _table;
 
             if (filter != null)
-            {
                 query = query.Where(filter);
-            }
 
             if (orderBy != null)
-            {
                 query = orderBy(query);
-            }
 
             return query.ToList();
         }
@@ -127,15 +110,18 @@ namespace ShamsAlShamoos01.Infrastructure.Persistence.Repositories
         // ===========================
         // متد Get مشابه LINQ با overload
         // ===========================
+        // فقط فیلتر
         public IEnumerable<T> Get(Expression<Func<T, bool>> filter)
         {
-            return GetAll(filter);
+            return GetAll(filter, null);
         }
 
+        // فقط ترتیب
         public IEnumerable<T> Get(Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
         {
-            return GetAll(orderBy);
+            return GetAll(null, orderBy);
         }
+
 
         public IEnumerable<T> Get(Expression<Func<T, bool>> filter, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
         {

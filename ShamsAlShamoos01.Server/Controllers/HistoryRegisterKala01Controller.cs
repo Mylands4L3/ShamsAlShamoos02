@@ -95,16 +95,19 @@ namespace ShamsAlShamoos01.Server.Controllers
                 const string whereClause = "1=1";
                 const string viewName = "dbo.View_HistoryRegisterKala03_Tbl";
 
-                var parameters = new DynamicParameters();
-                parameters.Add("@ViewSelect", viewName);
-                parameters.Add("@WHERE", whereClause);
+                var parameters = new
+                {
+                    ViewSelect = viewName,
+                    WHERE = whereClause
+                };
 
-                var guardActivity = _repository.ListFilter<HistoryRegisterKala01ViewModel_Update>(
+                // استفاده از ListAsync به جای ListAsync
+                var guardActivity = await _repository.ListAsync<HistoryRegisterKala01ViewModel_Update>(
                     "View_Dapper01", parameters, commandTimeout: 1300);
 
                 _dataService.SetHistoryRegisterKala01_Update(request.UserId, guardActivity);
 
-                return Ok(guardActivity.ToList());
+                return Ok(guardActivity);
             }
             catch (Exception ex)
             {
@@ -293,10 +296,22 @@ namespace ShamsAlShamoos01.Server.Controllers
         [HttpPost]
         public async Task<IActionResult> OnPostRemove([FromBody] CRUDModel<HistoryRegisterKala01ViewModel_Update> value)
         {
-            _context.HistoryRegisterKala01UW.DeleteById(value.Key.ToString());
-            _context.Save();
+            var repo = _context.Repository<HistoryRegisterKala01>();
+
+            // ابتدا موجودیت را پیدا کنید
+            var entity = await repo.GetByIdAsync(value.Key);
+            if (entity == null)
+                return NotFound("رکورد پیدا نشد");
+
+            // حذف موجودیت
+            repo.Remove(entity);
+
+            // ذخیره تغییرات
+            await _context.SaveChangesAsync();
+
             return Ok();
         }
+
 
         public class CombinedInsertRequestModel
         {
@@ -314,17 +329,23 @@ namespace ShamsAlShamoos01.Server.Controllers
             try
             {
                 var now = DateTime.Now;
-                var dateDoc02 = $"{_persianCalendar.GetYear(now):0000}/{_persianCalendar.GetMonth(now):00}/{_persianCalendar.GetDayOfMonth(now):00}";
                 var dateDoc01 = model.StartDate;
 
-                var lastDocNo = _context.HistoryRegisterKala01UW
-                    .Get(u => u.DocumentNO01.StartsWith(dateDoc01), q => q.OrderByDescending(d => d.DocumentNO01))
+                // 1️⃣ دریافت آخرین شماره سند با Dapper async
+                var parametersGet = new DynamicParameters();
+                parametersGet.Add("@StartDate", dateDoc01);
+
+                var allRecords = await _context.Dapper.ListAsync<HistoryRegisterKala01>(
+                    "Get_HistoryRegisterKala01_ByStartDate", parametersGet, commandTimeout: 1300);
+
+                var lastDocNo = allRecords
+                    .OrderByDescending(d => d.DocumentNO01)
                     .Select(u => u.DocumentNO01)
                     .FirstOrDefault();
 
+                // 2️⃣ مپ کردن ViewModel به Entity
                 var viewModel = model.CrudModel.Value;
 
-                // Set confirmation statuses
                 viewModel.StatusConfirmation01 = 320;
                 viewModel.StatusConfirmation02 = viewModel.StatusConfirmation03 =
                 viewModel.StatusConfirmation04 = viewModel.StatusConfirmation05 =
@@ -333,15 +354,15 @@ namespace ShamsAlShamoos01.Server.Controllers
                 var entity = _mapper.Map<HistoryRegisterKala01>(viewModel);
                 entity.HistoryRegisterKala01ID = Guid.NewGuid().ToString();
 
-                _context.HistoryRegisterKala01UW.Create(entity);
-                _context.Save();
+                // 3️⃣ درج رکورد جدید با متد InsertAsync در UnitOfWork
+                await _context.InsertAsync(entity);
 
-                // Update document number
-                var parameters = new DynamicParameters();
-                parameters.Add("@HistoryRegisterKala01ID", entity.HistoryRegisterKala01ID);
+                // 4️⃣ آپدیت شماره سند با Dapper async
+                var parametersUpdate = new DynamicParameters();
+                parametersUpdate.Add("@HistoryRegisterKala01ID", entity.HistoryRegisterKala01ID);
 
-                _repository.ListFilter<HistoryRegisterKala01ViewModel_Update>(
-                    "Update_HistoryRegisterKala01_DocumentNO01", parameters, commandTimeout: 1300);
+                await _context.Dapper.ListAsync<HistoryRegisterKala01ViewModel_Update>(
+                    "Update_HistoryRegisterKala01_DocumentNO01", parametersUpdate, commandTimeout: 1300);
 
                 return Ok(1);
             }
@@ -370,22 +391,26 @@ namespace ShamsAlShamoos01.Server.Controllers
                     return BadRequest("Invalid data");
                 }
 
-                var data = _context.HistoryRegisterKala01UW.GetById(model.CrudModel.Value.HistoryRegisterKala01ID);
+                var data = await _context.HistoryRegisterKala01UW
+                    .GetByIdAsync(model.CrudModel.Value.HistoryRegisterKala01ID);
+
                 if (data == null)
                 {
                     return NotFound("Record not found");
                 }
 
+                // آپدیت فیلدها بر اساس نقش‌ها
                 UpdateEntityBasedOnRoles(data, model.CrudModel.Value, model.Roles);
 
+                // ذخیره تغییرات
                 _context.HistoryRegisterKala01UW.Update(data);
-                _context.Save();
+                await _context.SaveChangesAsync();
 
-                // Update document number
+                // آپدیت شماره سند با Dapper
                 var parameters = new DynamicParameters();
                 parameters.Add("@HistoryRegisterKala01ID", data.HistoryRegisterKala01ID);
 
-                _repository.ListFilter<HistoryRegisterKala01ViewModel_Update>(
+                await _repository.ListAsync<HistoryRegisterKala01ViewModel_Update>(
                     "Update_HistoryRegisterKala01_DocumentNO01", parameters, commandTimeout: 1300);
 
                 return Ok(model.CrudModel.Value);
