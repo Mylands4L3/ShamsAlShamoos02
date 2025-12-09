@@ -7,8 +7,10 @@
     @if (IsLoading)
     {
         <span class="spinner-border spinner-border-sm me-2"></span>
-        <span> در حال بارگذاری...</span>
-       
+        <span> در حال بارگذاری...</span >
+
+
+
         }
     else
     {
@@ -23,7 +25,7 @@
         {
             <div class="col-md-3 col-sm-4 col-6 text-center">
                 <div class="p-2 border rounded shadow-sm">
-                    <img src="@($"{Http.BaseAddress}api/Qr/GetQrFile?fileName={qr}")"
+                    <img src="@($"{Http.BaseAddress}QrFiles/{qr}.png")"
                          class="img-fluid rounded" alt="QR Code" />
                     <div class="fw-bold mt-2">@qr</div>
                     <div class="text-muted mt-1">@QrTexts.GetValueOrDefault(qr)</div>
@@ -50,25 +52,37 @@ else if (!IsLoading)
 
         try
         {
-            // گرفتن لیست فایل‌ها از API
+            // فرض کنیم فایل‌ها به صورت دستی در QrFiles هستند
+            // و مسیر سرور همان است که GetQrFile استفاده می‌کند
             var files = await Http.GetFromJsonAsync<List<string>>("api/Qr/GetAllFiles");
 
             if (files != null && files.Count > 0)
             {
                 QrFiles = files;
 
-                // خواندن متن QRها همزمان
+                // خواندن متن QRها
                 var tasks = QrFiles.Select(async qr =>
                 {
+
                     try
                     {
-                        var text = await Http.GetFromJsonAsync<string>($"api/Qr/ReadQr?fileName={qr}");
-                        QrTexts[qr] = text;
+                        var response = await Http.GetAsync($"api/Qr/ReadQr?fileName={qr}");
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var text = await response.Content.ReadAsStringAsync();
+                            QrTexts[qr] = text;
+                        }
+                        else
+                        {
+                            QrTexts[qr] = $"Error: {response.StatusCode}";
+                        }
                     }
-                    catch
+                    catch (Exception sf)
                     {
                         QrTexts[qr] = "خواندن متن QR ناموفق بود";
                     }
+
+ 
                 });
 
                 await Task.WhenAll(tasks);

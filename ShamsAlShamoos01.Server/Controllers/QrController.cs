@@ -17,6 +17,21 @@ namespace ShamsAlShamoos01.Server.Controllers
             _qrBatch = qrBatch;
 
         }
+        [HttpGet("GetAllFiles")]
+        public IActionResult GetAllFiles()
+        {
+            // مسیر واقعی پوشه QRها
+            string qrFilesPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "QrFiles"));
+
+            if (!System.IO.Directory.Exists(qrFilesPath))
+                return Ok(new List<string>()); // اگر پوشه وجود ندارد، لیست خالی
+
+            var files = System.IO.Directory.GetFiles(qrFilesPath, "*.png")
+                                           .Select(f => Path.GetFileNameWithoutExtension(f))
+                                           .ToList();
+
+            return Ok(files);
+        }
         [HttpGet("Generate")]
         public IActionResult Generate([FromQuery] string text)
         {
@@ -30,6 +45,35 @@ namespace ShamsAlShamoos01.Server.Controllers
 
             return Ok(fileName); // فقط نام فایل
         }
+        [HttpGet("ReadQr")]
+        public IActionResult ReadQr([FromQuery] string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+                return BadRequest("FileName cannot be empty");
+
+            // مسیر واقعی فایل QR
+            string qrFilesPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "QrFiles"));
+            string filePath = Path.Combine(qrFilesPath, fileName + ".png");
+
+            if (!System.IO.File.Exists(filePath))
+                return NotFound($"File not found: {filePath}");
+
+            try
+            {
+                var qrReader = new QrReaderService();
+                var text = qrReader.ReadQrFromFile(filePath);
+
+                if (string.IsNullOrEmpty(text))
+                    return BadRequest("خواندن متن QR ناموفق بود");
+
+                return Ok(text);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"خطا در خواندن QR: {ex.Message}");
+            }
+        }
+
         [HttpPost("GenerateBatch")]
         public IActionResult GenerateBatch([FromBody] string longText)
         {
