@@ -29,42 +29,6 @@ namespace ShamsAlShamoos01.Server.Controllers
         private readonly APIDataService01 _dataService;
         private readonly PersianCalendar _persianCalendar = new();
 
-        private static readonly List<HistoryRegisterKala01ViewModelcat> _personellistDailyPlan01 = new();
-        public static IReadOnlyList<HistoryRegisterKala01ViewModelcat> PersonellistDailyPlan01 => _personellistDailyPlan01.AsReadOnly();
-
-        public List<HistoryRegisterKala01ViewModelcat> _View_DailyPlanEvidence02 { get; set; }
-
-        public string JsonSelectedMelliCode01
-        {
-            get
-            {
-                return HttpContext.Session.GetString("jsonSelectedMelliCode01") ?? "";
-            }
-            set
-            {
-                HttpContext.Session.SetString("jsonSelectedMelliCode01", value);
-            }
-        }
-
-        public List<string> SelectedMelliCode01
-        {
-            get
-            {
-                var value = HttpContext.Session.GetString("SelectedMelliCode01");
-                if (string.IsNullOrEmpty(value))
-                {
-                    return new List<string>();
-                }
-                return JsonConvert.DeserializeObject<List<string>>(value);
-            }
-            set
-            {
-                HttpContext.Session.SetString("SelectedMelliCode01", JsonConvert.SerializeObject(value));
-            }
-        }
-
-        private readonly Expression<Func<HistoryRegisterKala01, bool>> _tblMasterFilter = item => true;
-
         public HistoryRegisterKala01Controller(
             ApplicationDbContext contextDB,
             ILogger<HistoryRegisterKala01Controller> logger,
@@ -83,11 +47,6 @@ namespace ShamsAlShamoos01.Server.Controllers
             _userManager = userManager;
         }
 
-        public class TestRequest
-        {
-            public string Name { get; set; }
-        }
-
         [HttpPost]
         public IActionResult Test([FromBody] TestRequest request)
         {
@@ -102,11 +61,7 @@ namespace ShamsAlShamoos01.Server.Controllers
                 const string whereClause = "1=1";
                 const string viewName = "dbo.View_HistoryRegisterKala03_Tbl";
 
-                var parameters = new
-                {
-                    ViewSelect = viewName,
-                    WHERE = whereClause
-                };
+                var parameters = new { ViewSelect = viewName, WHERE = whereClause };
 
                 var guardActivity = await _repository.ListAsync<HistoryRegisterKala01ViewModel_Update>(
                     "View_Dapper01", parameters, 1300);
@@ -122,168 +77,6 @@ namespace ShamsAlShamoos01.Server.Controllers
             }
         }
 
-        private static string BuildRoleBasedWhereClause(
-            List<string> userRoles,
-            string baseCondition,
-            string unitCondition,
-            string regUnitCondition,
-            string status01P)
-        {
-            bool isPass = status01P == "PassSignature01";
-            bool isWait = status01P == "WaitForSignature01";
-            bool notClear = status01P == "NotCleare01";
-
-            var yeganClause = BuildYeganClause(userRoles, unitCondition, regUnitCondition, isPass, isWait, notClear);
-            if (yeganClause != null)
-            {
-                return yeganClause;
-            }
-
-            var yegan00Clause = BuildYegan00Clause(userRoles, baseCondition, unitCondition, isPass, isWait);
-            if (yegan00Clause != null)
-            {
-                return yegan00Clause;
-            }
-
-            var allClause = BuildAllClause(userRoles, baseCondition, status01P);
-            if (allClause != null)
-            {
-                return allClause;
-            }
-
-            var payvarOrVazifehClause = BuildPayvarOrVazifehClause(userRoles, baseCondition);
-            if (payvarOrVazifehClause != null)
-            {
-                return payvarOrVazifehClause;
-            }
-
-            return "1 = 0";
-        }
-
-        private static string BuildYeganClause(
-            List<string> roles,
-            string unitCondition,
-            string regUnitCondition,
-            bool isPass,
-            bool isWait,
-            bool notClear)
-        {
-            if (!roles.Contains("HistoryRegisterKalaYEGAN"))
-            {
-                return null;
-            }
-
-            if (roles.Contains("StatusHistoryRegisterKalaConfirmation02"))
-            {
-                return GetClauseForConfirmation02(regUnitCondition, isPass, isWait);
-            }
-
-            if (roles.Contains("StatusHistoryRegisterKalaConfirmation03"))
-            {
-                return GetClauseForConfirmation03(regUnitCondition, isPass, isWait, notClear);
-            }
-
-            return $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
-        }
-
-        private static string GetClauseForConfirmation02(string regUnitCondition, bool isPass, bool isWait)
-        {
-            if (isPass)
-            {
-                return $"{regUnitCondition} AND StatusConfirmation02 = 320";
-            }
-
-            if (isWait)
-            {
-                return $"{regUnitCondition} AND StatusConfirmation02 = 319";
-            }
-
-            return null;
-        }
-
-        private static string GetClauseForConfirmation03(string regUnitCondition, bool isPass, bool isWait, bool notClear)
-        {
-            string baseClause = $"{regUnitCondition} AND StatusConfirmation02 = 320";
-
-            if (isPass)
-            {
-                return $"{baseClause} AND StatusConfirmation03 = 320";
-            }
-
-            if (notClear)
-            {
-                return $"{baseClause} AND StatusConfirmation03 = 321";
-            }
-
-            if (isWait)
-            {
-                return $"{baseClause} AND StatusConfirmation03 = 319";
-            }
-
-            return null;
-        }
-
-        private static string BuildYegan00Clause(List<string> roles, string baseCondition, string unitCondition, bool isPass, bool isWait)
-        {
-            if (!roles.Contains("HistoryRegisterKalaYEGAN00"))
-            {
-                return null;
-            }
-
-            if (roles.Contains("StatusHistoryRegisterKalaConfirmation02"))
-            {
-                if (isPass)
-                {
-                    return $"{baseCondition} AND StatusConfirmation02 = 320";
-                }
-
-                if (isWait)
-                {
-                    return $"{baseCondition} AND StatusConfirmation02 = 319";
-                }
-            }
-
-            if (roles.Contains("StatusHistoryRegisterKalaConfirmation03"))
-            {
-                if (isPass)
-                {
-                    return $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
-                }
-
-                if (isWait)
-                {
-                    return $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 319";
-                }
-            }
-
-            return null;
-        }
-
-        private static string BuildAllClause(List<string> roles, string baseCondition, string status01P)
-        {
-            if (roles.Contains("HistoryRegisterKalaALL") && status01P == "AllPassSignature01")
-            {
-                return $"{baseCondition} AND StatusConfirmation03 = 320";
-            }
-
-            return null;
-        }
-
-        private static string BuildPayvarOrVazifehClause(List<string> roles, string baseCondition)
-        {
-            if (roles.Contains("HistoryRegisterKalaPayvar"))
-            {
-                return $"{baseCondition} AND StatusConfirmation03 = 320 AND TblLuLookupSubbId NOT IN ('8','10','12','13')";
-            }
-
-            if (roles.Contains("HistoryRegisterKalaVazifeh"))
-            {
-                return $"{baseCondition} AND StatusConfirmation03 = 320 AND TblLuLookupSubbId IN ('8','10','12','13')";
-            }
-
-            return null;
-        }
-
         [HttpPost]
         public async Task<IActionResult> OnPostRemove([FromBody] CRUDModel<HistoryRegisterKala01ViewModel_Update> value)
         {
@@ -291,16 +84,13 @@ namespace ShamsAlShamoos01.Server.Controllers
 
             var entity = await repo.GetByIdAsync(value.Key);
             if (entity == null)
-            {
                 return NotFound("رکورد پیدا نشد");
-            }
 
             repo.Remove(entity);
             await _context.SaveChangesAsync();
 
             return Ok();
         }
-
         public class CombinedInsertRequestModel
         {
             public DataManagerRequest DataRequest { get; set; }
@@ -316,7 +106,6 @@ namespace ShamsAlShamoos01.Server.Controllers
         {
             try
             {
-                var now = DateTime.Now;
                 var dateDoc01 = model.StartDate;
 
                 var parametersGet = new DynamicParameters();
@@ -332,6 +121,7 @@ namespace ShamsAlShamoos01.Server.Controllers
 
                 var viewModel = model.CrudModel.Value;
 
+                // مقداردهی وضعیت‌ها
                 viewModel.StatusConfirmation01 = 320;
                 viewModel.StatusConfirmation02 = viewModel.StatusConfirmation03 =
                 viewModel.StatusConfirmation04 = viewModel.StatusConfirmation05 =
@@ -356,7 +146,6 @@ namespace ShamsAlShamoos01.Server.Controllers
                 return StatusCode(500, "خطایی در سرور رخ داده است");
             }
         }
-
         public class CombinedRequestModel
         {
             public DataManagerRequest DataRequest { get; set; }
@@ -371,17 +160,13 @@ namespace ShamsAlShamoos01.Server.Controllers
             try
             {
                 if (model.CrudModel?.Value == null)
-                {
                     return BadRequest("Invalid data");
-                }
 
                 var data = await _context.HistoryRegisterKala01UW
                     .GetByIdAsync(model.CrudModel.Value.HistoryRegisterKala01ID);
 
                 if (data == null)
-                {
                     return NotFound("Record not found");
-                }
 
                 UpdateEntityBasedOnRoles(data, model.CrudModel.Value, model.Roles);
 
@@ -408,7 +193,24 @@ namespace ShamsAlShamoos01.Server.Controllers
         {
             if (roles.Contains("StatusHistoryRegisterKalaConfirmation02"))
             {
-                UpdateVartextFields02(entity, viewModel);
+                entity.Vartext01 = viewModel.Vartext01;
+                entity.Vartext02 = viewModel.Vartext02;
+                entity.Vartext03 = viewModel.Vartext03;
+                entity.Vartext04 = viewModel.Vartext04;
+                entity.Vartext05 = viewModel.Vartext05;
+                entity.Vartext06 = viewModel.Vartext06;
+                entity.Vartext09 = viewModel.Vartext09;
+                entity.Vartext10 = viewModel.Vartext10;
+                entity.Vartext11 = viewModel.Vartext11;
+                entity.Vartext12 = viewModel.Vartext12;
+                entity.Vartext13 = viewModel.Vartext13;
+                entity.Vartext14 = viewModel.Vartext14;
+                entity.Vartext15 = viewModel.Vartext15;
+                entity.Vartext16 = viewModel.Vartext16;
+                entity.Vartext17 = viewModel.Vartext17;
+                entity.Vartext18 = viewModel.Vartext18;
+                entity.Vartext19 = viewModel.Vartext19;
+                entity.Vartext20 = viewModel.Vartext20;
             }
 
             if (roles.Contains("StatusHistoryRegisterKalaConfirmation04"))
@@ -417,26 +219,19 @@ namespace ShamsAlShamoos01.Server.Controllers
             }
         }
 
-        private static void UpdateVartextFields02(HistoryRegisterKala01 entity, HistoryRegisterKala01ViewModel_Update viewModel)
+        public class TestRequest
         {
-            entity.Vartext01 = viewModel.Vartext01;
-            entity.Vartext02 = viewModel.Vartext02;
-            entity.Vartext03 = viewModel.Vartext03;
-            entity.Vartext04 = viewModel.Vartext04;
-            entity.Vartext05 = viewModel.Vartext05;
-            entity.Vartext06 = viewModel.Vartext06;
-            entity.Vartext09 = viewModel.Vartext09;
-            entity.Vartext10 = viewModel.Vartext10;
-            entity.Vartext11 = viewModel.Vartext11;
-            entity.Vartext12 = viewModel.Vartext12;
-            entity.Vartext13 = viewModel.Vartext13;
-            entity.Vartext14 = viewModel.Vartext14;
-            entity.Vartext15 = viewModel.Vartext15;
-            entity.Vartext16 = viewModel.Vartext16;
-            entity.Vartext17 = viewModel.Vartext17;
-            entity.Vartext18 = viewModel.Vartext18;
-            entity.Vartext19 = viewModel.Vartext19;
-            entity.Vartext20 = viewModel.Vartext20;
+            public string Name { get; set; }
         }
+    }
+
+    // کلاس LoadDataRequest
+    public class LoadDataRequest
+    {
+        public string UserId { get; set; }
+        public int Skip { get; set; }
+        public int Take { get; set; }
+        public string Filter { get; set; }
+        public string Sort { get; set; }
     }
 }
