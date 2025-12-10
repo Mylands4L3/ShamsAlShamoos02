@@ -34,10 +34,14 @@ namespace ShamsAlShamoos01.Infrastructure.Persistence.Repositories
         public async Task<IEnumerable<T>> GetAllAsync() => await _table.ToListAsync();
         public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> filter)
         {
-            if (filter == null) return await GetAllAsync();
-            {
-            return await _table.Where(filter).ToListAsync();
+            if (filter == null)
+            {     
+                return await GetAllAsync();
+                return await GetAllAsync();
+
             }
+        
+            return await _table.Where(filter).ToListAsync();
         }
         public async Task<IEnumerable<T>> GetAllAsync(
             Expression<Func<T, bool>> filter,
