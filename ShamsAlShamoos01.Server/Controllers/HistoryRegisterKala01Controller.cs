@@ -84,7 +84,9 @@ namespace ShamsAlShamoos01.Server.Controllers
 
             var entity = await repo.GetByIdAsync(value.Key);
             if (entity == null)
+            {
                 return NotFound("رکورد پیدا نشد");
+            }
 
             repo.Remove(entity);
             await _context.SaveChangesAsync();
@@ -160,13 +162,18 @@ namespace ShamsAlShamoos01.Server.Controllers
             try
             {
                 if (model.CrudModel?.Value == null)
+                {
                     return BadRequest("Invalid data");
+                }
 
                 var data = await _context.HistoryRegisterKala01UW
                     .GetByIdAsync(model.CrudModel.Value.HistoryRegisterKala01ID);
 
                 if (data == null)
+                {
                     return NotFound("Record not found");
+
+                }
 
                 UpdateEntityBasedOnRoles(data, model.CrudModel.Value, model.Roles);
 
