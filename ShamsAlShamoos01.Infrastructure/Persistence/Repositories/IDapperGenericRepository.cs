@@ -6,20 +6,15 @@ namespace ShamsAlShamoos01.Infrastructure.Persistence.Repositories
 {
     public interface IDapperGenericRepository
     {
-        string ConnectionString { get; set; }
+        List<T> List<T>(string sp, object param, int? timeout);
+        Task<List<T>> ListAsync<T>(string sp, object param, int? timeout);
 
-        // Execute
-        void Execute(string sp, object param = null, int? commandTimeout = null);
-        Task ExecuteAsync(string sp, object param = null, int? commandTimeout = null);
+        T Single<T>(string sp, object param, int? timeout);
+        Task<T> SingleAsync<T>(string sp, object param, int? timeout);
 
-        // Query
-        List<T> List<T>(string sp, object param = null, int? commandTimeout = null);
-        Task<List<T>> ListAsync<T>(string sp, object param = null, int? commandTimeout = null);
+        void Execute(string sp, object param, int? timeout);
+        Task ExecuteAsync(string sp, object param, int? timeout);
 
-        T Single<T>(string sp, object param = null, int? commandTimeout = null);
-        Task<T> SingleAsync<T>(string sp, object param = null, int? commandTimeout = null);
-
-        // QueryMultiple for VartextAll
-        Task<VartextAllModel> ListVartextAllAsync(string sp, object param = null, int? commandTimeout = null);
+        Task<VartextAllModel> ListVartextAllAsync(string sp, object param, int? timeout);
     }
 }

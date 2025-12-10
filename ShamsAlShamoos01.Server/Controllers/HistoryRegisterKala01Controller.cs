@@ -103,7 +103,7 @@ namespace ShamsAlShamoos01.Server.Controllers
 
                 // استفاده از ListAsync به جای ListAsync
                 var guardActivity = await _repository.ListAsync<HistoryRegisterKala01ViewModel_Update>(
-                    "View_Dapper01", parameters, commandTimeout: 1300);
+                    "View_Dapper01", parameters,  1300);
 
                 _dataService.SetHistoryRegisterKala01_Update(request.UserId, guardActivity);
 
@@ -336,7 +336,7 @@ namespace ShamsAlShamoos01.Server.Controllers
                 parametersGet.Add("@StartDate", dateDoc01);
 
                 var allRecords = await _context.Dapper.ListAsync<HistoryRegisterKala01>(
-                    "Get_HistoryRegisterKala01_ByStartDate", parametersGet, commandTimeout: 1300);
+                    "Get_HistoryRegisterKala01_ByStartDate", parametersGet, 1300);
 
                 var lastDocNo = allRecords
                     .OrderByDescending(d => d.DocumentNO01)
@@ -362,7 +362,7 @@ namespace ShamsAlShamoos01.Server.Controllers
                 parametersUpdate.Add("@HistoryRegisterKala01ID", entity.HistoryRegisterKala01ID);
 
                 await _context.Dapper.ListAsync<HistoryRegisterKala01ViewModel_Update>(
-                    "Update_HistoryRegisterKala01_DocumentNO01", parametersUpdate, commandTimeout: 1300);
+                    "Update_HistoryRegisterKala01_DocumentNO01", parametersUpdate, 1300);
 
                 return Ok(1);
             }
@@ -411,7 +411,7 @@ namespace ShamsAlShamoos01.Server.Controllers
                 parameters.Add("@HistoryRegisterKala01ID", data.HistoryRegisterKala01ID);
 
                 await _repository.ListAsync<HistoryRegisterKala01ViewModel_Update>(
-                    "Update_HistoryRegisterKala01_DocumentNO01", parameters, commandTimeout: 1300);
+                    "Update_HistoryRegisterKala01_DocumentNO01", parameters, 1300);
 
                 return Ok(model.CrudModel.Value);
             }

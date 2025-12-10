@@ -18,39 +18,21 @@ namespace ShamsAlShamoos01.Infrastructure.Persistence.UnitOfWork
             Dapper = dapper ?? throw new ArgumentNullException(nameof(dapper));
         }
 
-        // ========================
-        // Repository<T>
-        // ========================
         public IBaseRepository<T> Repository<T>() where T : class
         {
             var repo = _repositories.GetOrAdd(
                 typeof(T),
-                t => new Lazy<object>(() => new GenericClass<T>(_context)) // GenericClass<T> همان IBaseRepository<T>
+                t => new Lazy<object>(() => new GenericClass<T>(_context))
             );
             return (IBaseRepository<T>)repo.Value;
         }
 
-        // ========================
-        // Dapper
-        // ========================
         public IDapperGenericRepository Dapper { get; }
 
-        // ========================
-        // Example property
-        // ========================
         public IBaseRepository<HistoryRegisterKala01> HistoryRegisterKala01UW => Repository<HistoryRegisterKala01>();
 
-        // ========================
-        // Save / Transaction
-        // ========================
-        public async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
-        }
+        public async Task<int> SaveChangesAsync() => await _context.SaveChangesAsync();
 
-        // ========================
-        // Dispose / Async Dispose
-        // ========================
         public void Dispose()
         {
             _repositories.Clear();
@@ -62,11 +44,11 @@ namespace ShamsAlShamoos01.Infrastructure.Persistence.UnitOfWork
             _repositories.Clear();
             await _context.DisposeAsync();
         }
+
         public async Task InsertAsync<T>(T entity) where T : class
         {
-            _context.Set<T>().Add(entity);
-            await _context.SaveChangesAsync();
+            await Repository<T>().AddAsync(entity);
+            await SaveChangesAsync();
         }
-
     }
 }

@@ -23,10 +23,36 @@ namespace ShamsAlShamoos01.Infrastructure.Persistence.Repositories
         public async Task<T> GetByIdAsync(object id)
             => await _context.Set<T>().FindAsync(id);
 
-        public async Task<IEnumerable<T>> GetAllAsync(
-            Expression<Func<T, bool>> filter = null,
-            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
-            int? skip = null, int? take = null)
+        // =====================
+        // GetAllAsync Overloads
+        // =====================
+
+        public Task<IEnumerable<T>> GetAllAsync()
+            => GetAllAsyncInternal(null, null, null, null);
+
+        public Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> filter)
+            => GetAllAsyncInternal(filter, null, null, null);
+
+        public Task<IEnumerable<T>> GetAllAsync(
+            Expression<Func<T, bool>> filter,
+            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
+            => GetAllAsyncInternal(filter, orderBy, null, null);
+
+        public Task<IEnumerable<T>> GetAllAsync(
+            Expression<Func<T, bool>> filter,
+            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy,
+            int skip,
+            int take)
+            => GetAllAsyncInternal(filter, orderBy, skip, take);
+
+        // -----------------------------
+        // Shared internal executor
+        // -----------------------------
+        private async Task<IEnumerable<T>> GetAllAsyncInternal(
+            Expression<Func<T, bool>> filter,
+            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy,
+            int? skip,
+            int? take)
         {
             IQueryable<T> query = _context.Set<T>();
 
@@ -45,6 +71,9 @@ namespace ShamsAlShamoos01.Infrastructure.Persistence.Repositories
             return await query.AsNoTracking().ToListAsync();
         }
 
+        // =====================
+        // CRUD methods
+        // =====================
         public async Task AddAsync(T entity) => await _context.Set<T>().AddAsync(entity);
         public async Task AddRangeAsync(IEnumerable<T> entities) => await _context.Set<T>().AddRangeAsync(entities);
         public void Update(T entity) => _context.Set<T>().Update(entity);

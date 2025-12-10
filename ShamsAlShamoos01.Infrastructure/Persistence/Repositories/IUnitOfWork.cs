@@ -1,16 +1,20 @@
 ﻿using ShamsAlShamoos01.Infrastructure.Persistence.Repositories;
 using ShamsAlShamoos01.Shared.Entities;
+using System;
+using System.Threading.Tasks;
 
-public interface IUnitOfWork : IDisposable
+namespace ShamsAlShamoos01.Infrastructure.Persistence.UnitOfWork
 {
-    IBaseRepository<T> Repository<T>() where T : class;
-    Task<int> SaveChangesAsync();
+    public interface IUnitOfWork : IDisposable
+    {
+        IBaseRepository<T> Repository<T>() where T : class;
+        Task<int> SaveChangesAsync();
 
-    // Dapper generic repository
-    IDapperGenericRepository Dapper { get; }
+        IDapperGenericRepository Dapper { get; }
 
-    // اضافه کردن متد InsertAsync
-    Task InsertAsync<T>(T entity) where T : class;
-    IBaseRepository<HistoryRegisterKala01> HistoryRegisterKala01UW { get; }
-        
+        // Example specific repository
+        IBaseRepository<HistoryRegisterKala01> HistoryRegisterKala01UW { get; }
+
+        Task InsertAsync<T>(T entity) where T : class;
+    }
 }
