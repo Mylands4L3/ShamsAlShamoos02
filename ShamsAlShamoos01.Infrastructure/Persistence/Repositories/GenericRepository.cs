@@ -37,21 +37,48 @@ namespace ShamsAlShamoos01.Infrastructure.Persistence.Repositories
             if (filter == null) return await GetAllAsync();
             return await _table.Where(filter).ToListAsync();
         }
-        public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> filter, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
+        public async Task<IEnumerable<T>> GetAllAsync(
+            Expression<Func<T, bool>> filter,
+            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
         {
             IQueryable<T> query = _table;
-            if (filter != null) query = query.Where(filter);
-            if (orderBy != null) query = orderBy(query);
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+            if (orderBy != null)
+            {
+                query = orderBy(query);
+            }
+
             return await query.ToListAsync();
         }
-        public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> filter, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy, int skip, int take)
+
+        public async Task<IEnumerable<T>> GetAllAsync(
+            Expression<Func<T, bool>> filter,
+            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy,
+            int skip,
+            int take)
         {
             IQueryable<T> query = _table;
-            if (filter != null) query = query.Where(filter);
-            if (orderBy != null) query = orderBy(query);
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+            if (orderBy != null)
+            {
+                query = orderBy(query);
+            }
+
             query = query.Skip(skip).Take(take);
+
             return await query.ToListAsync();
         }
+
         #endregion
 
         #region Transaction

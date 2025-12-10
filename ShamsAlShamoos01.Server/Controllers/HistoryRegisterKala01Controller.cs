@@ -29,31 +29,38 @@ namespace ShamsAlShamoos01.Server.Controllers
         private readonly APIDataService01 _dataService;
         private readonly PersianCalendar _persianCalendar = new();
 
-
         private static readonly List<HistoryRegisterKala01ViewModelcat> _personellistDailyPlan01 = new();
-
         public static IReadOnlyList<HistoryRegisterKala01ViewModelcat> PersonellistDailyPlan01 => _personellistDailyPlan01.AsReadOnly();
-
-
-
 
         public List<HistoryRegisterKala01ViewModelcat> _View_DailyPlanEvidence02 { get; set; }
 
         public string JsonSelectedMelliCode01
         {
-            get => HttpContext.Session.GetString("jsonSelectedMelliCode01") ?? "";
-            set => HttpContext.Session.SetString("jsonSelectedMelliCode01", value);
+            get
+            {
+                return HttpContext.Session.GetString("jsonSelectedMelliCode01") ?? "";
+            }
+            set
+            {
+                HttpContext.Session.SetString("jsonSelectedMelliCode01", value);
+            }
         }
-        // TODO: متدی بساز که تمام محصولات با قیمت > 1000 را از DB بخواند و مرتب کند
 
         public List<string> SelectedMelliCode01
         {
             get
             {
                 var value = HttpContext.Session.GetString("SelectedMelliCode01");
-                return string.IsNullOrEmpty(value) ? new List<string>() : JsonConvert.DeserializeObject<List<string>>(value);
+                if (string.IsNullOrEmpty(value))
+                {
+                    return new List<string>();
+                }
+                return JsonConvert.DeserializeObject<List<string>>(value);
             }
-            set => HttpContext.Session.SetString("SelectedMelliCode01", JsonConvert.SerializeObject(value));
+            set
+            {
+                HttpContext.Session.SetString("SelectedMelliCode01", JsonConvert.SerializeObject(value));
+            }
         }
 
         private readonly Expression<Func<HistoryRegisterKala01, bool>> _tblMasterFilter = item => true;
@@ -101,9 +108,8 @@ namespace ShamsAlShamoos01.Server.Controllers
                     WHERE = whereClause
                 };
 
-                // استفاده از ListAsync به جای ListAsync
                 var guardActivity = await _repository.ListAsync<HistoryRegisterKala01ViewModel_Update>(
-                    "View_Dapper01", parameters,  1300);
+                    "View_Dapper01", parameters, 1300);
 
                 _dataService.SetHistoryRegisterKala01_Update(request.UserId, guardActivity);
 
@@ -127,35 +133,30 @@ namespace ShamsAlShamoos01.Server.Controllers
             bool isWait = status01P == "WaitForSignature01";
             bool notClear = status01P == "NotCleare01";
 
-            // سطح YEGAN
             var yeganClause = BuildYeganClause(userRoles, unitCondition, regUnitCondition, isPass, isWait, notClear);
             if (yeganClause != null)
             {
                 return yeganClause;
             }
 
-            // سطح YEGAN00
             var yegan00Clause = BuildYegan00Clause(userRoles, baseCondition, unitCondition, isPass, isWait);
             if (yegan00Clause != null)
             {
                 return yegan00Clause;
             }
 
-            // تاریخچه ALL
             var allClause = BuildAllClause(userRoles, baseCondition, status01P);
             if (allClause != null)
             {
                 return allClause;
             }
 
-            // پایور و وظیفه
             var payvarOrVazifehClause = BuildPayvarOrVazifehClause(userRoles, baseCondition);
             if (payvarOrVazifehClause != null)
             {
                 return payvarOrVazifehClause;
             }
 
-            // پیش‌فرض
             return "1 = 0";
         }
 
@@ -182,11 +183,9 @@ namespace ShamsAlShamoos01.Server.Controllers
                 return GetClauseForConfirmation03(regUnitCondition, isPass, isWait, notClear);
             }
 
-            // شرط پیش‌فرض
             return $"{unitCondition} AND StatusConfirmation02 = 320 AND StatusConfirmation03 = 320";
         }
 
-        // کمکی برای StatusConfirmation02
         private static string GetClauseForConfirmation02(string regUnitCondition, bool isPass, bool isWait)
         {
             if (isPass)
@@ -202,13 +201,7 @@ namespace ShamsAlShamoos01.Server.Controllers
             return null;
         }
 
-
-        // کمکی برای StatusConfirmation03
-        private static string GetClauseForConfirmation03(
-            string regUnitCondition,
-            bool isPass,
-            bool isWait,
-            bool notClear)
+        private static string GetClauseForConfirmation03(string regUnitCondition, bool isPass, bool isWait, bool notClear)
         {
             string baseClause = $"{regUnitCondition} AND StatusConfirmation02 = 320";
 
@@ -229,7 +222,6 @@ namespace ShamsAlShamoos01.Server.Controllers
 
             return null;
         }
-
 
         private static string BuildYegan00Clause(List<string> roles, string baseCondition, string unitCondition, bool isPass, bool isWait)
         {
@@ -267,16 +259,15 @@ namespace ShamsAlShamoos01.Server.Controllers
             return null;
         }
 
-   private static string BuildAllClause(List<string> roles, string baseCondition, string status01P)
-{
-    if (roles.Contains("HistoryRegisterKalaALL") && status01P == "AllPassSignature01")
-    {
-        return $"{baseCondition} AND StatusConfirmation03 = 320";
-    }
+        private static string BuildAllClause(List<string> roles, string baseCondition, string status01P)
+        {
+            if (roles.Contains("HistoryRegisterKalaALL") && status01P == "AllPassSignature01")
+            {
+                return $"{baseCondition} AND StatusConfirmation03 = 320";
+            }
 
-    return null;
-}
-
+            return null;
+        }
 
         private static string BuildPayvarOrVazifehClause(List<string> roles, string baseCondition)
         {
@@ -298,20 +289,17 @@ namespace ShamsAlShamoos01.Server.Controllers
         {
             var repo = _context.Repository<HistoryRegisterKala01>();
 
-            // ابتدا موجودیت را پیدا کنید
             var entity = await repo.GetByIdAsync(value.Key);
             if (entity == null)
+            {
                 return NotFound("رکورد پیدا نشد");
+            }
 
-            // حذف موجودیت
             repo.Remove(entity);
-
-            // ذخیره تغییرات
             await _context.SaveChangesAsync();
 
             return Ok();
         }
-
 
         public class CombinedInsertRequestModel
         {
@@ -331,7 +319,6 @@ namespace ShamsAlShamoos01.Server.Controllers
                 var now = DateTime.Now;
                 var dateDoc01 = model.StartDate;
 
-                // 1️⃣ دریافت آخرین شماره سند با Dapper async
                 var parametersGet = new DynamicParameters();
                 parametersGet.Add("@StartDate", dateDoc01);
 
@@ -343,7 +330,6 @@ namespace ShamsAlShamoos01.Server.Controllers
                     .Select(u => u.DocumentNO01)
                     .FirstOrDefault();
 
-                // 2️⃣ مپ کردن ViewModel به Entity
                 var viewModel = model.CrudModel.Value;
 
                 viewModel.StatusConfirmation01 = 320;
@@ -354,10 +340,8 @@ namespace ShamsAlShamoos01.Server.Controllers
                 var entity = _mapper.Map<HistoryRegisterKala01>(viewModel);
                 entity.HistoryRegisterKala01ID = Guid.NewGuid().ToString();
 
-                // 3️⃣ درج رکورد جدید با متد InsertAsync در UnitOfWork
                 await _context.InsertAsync(entity);
 
-                // 4️⃣ آپدیت شماره سند با Dapper async
                 var parametersUpdate = new DynamicParameters();
                 parametersUpdate.Add("@HistoryRegisterKala01ID", entity.HistoryRegisterKala01ID);
 
@@ -399,14 +383,11 @@ namespace ShamsAlShamoos01.Server.Controllers
                     return NotFound("Record not found");
                 }
 
-                // آپدیت فیلدها بر اساس نقش‌ها
                 UpdateEntityBasedOnRoles(data, model.CrudModel.Value, model.Roles);
 
-                // ذخیره تغییرات
                 _context.HistoryRegisterKala01UW.Update(data);
                 await _context.SaveChangesAsync();
 
-                // آپدیت شماره سند با Dapper
                 var parameters = new DynamicParameters();
                 parameters.Add("@HistoryRegisterKala01ID", data.HistoryRegisterKala01ID);
 
