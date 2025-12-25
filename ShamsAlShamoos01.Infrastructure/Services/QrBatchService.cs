@@ -54,10 +54,17 @@ public class QrBatchService
 
         return parts;
     }
-    private byte[] GenerateQrBytes(string text)
+    public List<string> GenerateQrsFromImage(string imagePath)
     {
-        var qrData = QRCodeGenerator.GenerateQrCode(text, QRCodeGenerator.ECCLevel.Q);
-        var pngQr = new PngByteQRCode(qrData);
-        return pngQr.GetGraphic(20);
+        if (!File.Exists(imagePath))
+            return new List<string>();
+
+        // تبدیل عکس به Base64
+        byte[] imageBytes = File.ReadAllBytes(imagePath);
+        string base64String = Convert.ToBase64String(imageBytes);
+
+        // استفاده از متد اصلی برای تولید QR از متن Base64
+        return GenerateMultipleQrs(base64String);
     }
+
 }
